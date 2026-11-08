@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Icon & Avatar Verification</title>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <style>
+    body { padding: 40px; font-family: var(--font-family); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; margin-top: 20px; }
+    .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 16px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .sizes { display: flex; gap: 12px; align-items: center; margin: 12px 0; }
+  </style>
+</head>
+<body>
+  <h1>Icon & Avatar Verification Suite</h1>
+  <div id="status" style="font-weight: bold; margin: 16px 0;">Verifying...</div>
+
+  <h2>Avatars</h2>
+  <div class="sizes" id="avatar-container"></div>
+  <div class="sizes" id="group-container"></div>
+
+  <h2>All Icons at 4 Sizes (sm 14px, md 18px, lg 22px, xl 28px)</h2>
+  <div class="grid" id="icon-grid"></div>
+
+  <script type="module">
+    import { icon } from '/js/core/icons.js';
+    import { renderAvatar, renderAvatarGroup } from '/js/core/avatar.js';
+
+    const iconNames = [
+      'plus', 'search', 'sun', 'moon', 'bell', 'users', 'user', 'calendar',
+      'flag', 'message', 'trash', 'edit', 'check', 'x', 'more-horizontal',
+      'chevron-down', 'chevron-right', 'layout-grid', 'list-checks', 'settings',
+      'log-out', 'folder', 'clock', 'alert-circle', 'grip-vertical', 'arrow-right'
+    ];
+
+    // Render Avatars
+    const user = { name: 'Aarav Sharma', avatarHue: 200 };
+    const avatarCont = document.getElementById('avatar-container');
+    [20, 24, 32, 40].forEach(s => {
+      avatarCont.innerHTML += `<div>${renderAvatar(user, s)} <span style="font-size:11px">${s}px</span></div>`;
+    });
+
+    const users = [
+      { name: 'Priya Patel', avatarHue: 320 },
+      { name: 'Rohan Mehta', avatarHue: 45 },
+      { name: 'Ananya Gupta', avatarHue: 160 },
+      { name: 'Vikram Singh', avatarHue: 270 },
+      { name: 'Sneha Reddy', avatarHue: 100 }
+    ];
+    document.getElementById('group-container').innerHTML = renderAvatarGroup(users, 3, 28);
+
+    // Render Icons
+    const grid = document.getElementById('icon-grid');
+    iconNames.forEach(name => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div style="font-size: 11px; font-weight: 600; color: var(--text-muted);">${name}</div>
+        <div class="sizes">
+          ${icon(name, 'icon-sm')}
+          ${icon(name, 'icon-md')}
+          ${icon(name, 'icon-lg')}
+          ${icon(name, 'icon-xl')}
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    // Verification check
+    setTimeout(() => {
+      let oversized = false;
+      document.querySelectorAll('svg.icon').forEach(svg => {
+        const rect = svg.getBoundingClientRect();
+        if (rect.width > 32 || rect.height > 32) {
+          oversized = true;
+          console.error('Oversized icon:', svg, rect);
+        }
+      });
+      document.querySelectorAll('.avatar').forEach(av => {
+        const rect = av.getBoundingClientRect();
+        if (rect.width > 44 || rect.height > 44) {
+          oversized = true;
+          console.error('Oversized avatar:', av, rect);
+        }
+      });
+
+      const statusEl = document.getElementById('status');
+      if (!oversized) {
+        statusEl.textContent = 'All icons and avatars verified correctly sized (no overflow / oversized elements)';
+        statusEl.style.color = '#0D9488';
+      } else {
+        statusEl.textContent = 'FAIL: Oversized elements found';
+        statusEl.style.color = '#E5484D';
+      }
+    }, 100);
+  </script>
+</body>
+</html>

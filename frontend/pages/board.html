@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Board - TaskFlow</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/board.css">
+  <script type="module">
+    import { initTheme } from '/js/core/theme.js';
+    initTheme();
+  </script>
+</head>
+<body>
+  <!-- Global Shell Container -->
+  <div id="app-shell"></div>
+
+  <!-- Board Page Specific Markup Template (Injected into #page-content) -->
+  <template id="board-template">
+    <div class="board-container">
+      
+      <!-- Board Header -->
+      <header class="board-header">
+        <div class="board-header-top">
+          <div class="board-title-group">
+            <span class="board-color-indicator" id="board-color-indicator"></span>
+            <div>
+              <h1 class="board-title" id="board-title">Loading project...</h1>
+              <p class="board-description" id="board-desc"></p>
+            </div>
+          </div>
+
+          <div class="board-actions">
+            <!-- Member Avatars -->
+            <div id="board-members-group" style="cursor: pointer;" title="Manage members"></div>
+
+            <!-- Invite Member Button -->
+            <button class="btn btn-secondary btn-sm" id="btn-invite-member">
+              <!-- icon users injected via JS -->
+              <span>Members</span>
+            </button>
+
+            <!-- Project Settings Button -->
+            <button class="btn btn-ghost btn-icon" id="btn-project-settings" title="Project settings" aria-label="Project settings">
+              <!-- icon settings injected via JS -->
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="board-filters">
+          <!-- Filter Search -->
+          <div class="filter-search-container">
+            <span class="filter-search-icon" id="filter-search-icon-slot"></span>
+            <input type="text" class="filter-input" id="filter-text" placeholder="Filter tasks by title...">
+          </div>
+
+          <!-- Assignee Filter -->
+          <select class="filter-select" id="filter-assignee">
+            <option value="all">All assignees</option>
+            <option value="me">Assigned to me</option>
+            <option value="unassigned">Unassigned</option>
+          </select>
+
+          <!-- Priority Filter -->
+          <select class="filter-select" id="filter-priority">
+            <option value="all">All priorities</option>
+            <option value="high">High priority</option>
+            <option value="medium">Medium priority</option>
+            <option value="low">Low priority</option>
+          </select>
+
+          <!-- Clear Filters -->
+          <button type="button" class="btn-clear-filters" id="btn-clear-filters" style="display: none;">
+            <span id="clear-icon-slot"></span>
+            <span>Clear filters</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Kanban Columns Container (3 Columns) -->
+      <main class="board-columns" id="board-columns" role="region" aria-label="Kanban board">
+        
+        <!-- Column 1: To Do -->
+        <section class="kanban-column" id="column-todo" data-status="todo" aria-label="To Do column">
+          <div class="column-header">
+            <div class="column-header-title">
+              <span>To Do</span>
+              <span class="count-badge" id="badge-todo">0</span>
+            </div>
+            <button class="column-btn-add" data-add-column="todo" title="Add task to To Do" aria-label="Add task to To Do">
+              <!-- icon plus -->
+            </button>
+          </div>
+
+          <div class="column-tasks" id="tasks-todo" role="list"></div>
+
+          <!-- Inline Task Composer -->
+          <div class="add-task-composer" id="composer-todo" style="display: none;">
+            <div class="composer-form">
+              <textarea class="composer-input" id="composer-input-todo" placeholder="What needs to be done?"></textarea>
+              <div class="composer-actions">
+                <span class="composer-hint">Enter to add &bull; Esc to cancel</span>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" class="btn btn-secondary btn-sm" data-cancel-composer="todo">Cancel</button>
+                  <button type="button" class="btn btn-primary btn-sm" data-submit-composer="todo">Add</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding: 8px 12px;" id="btn-open-wrapper-todo">
+            <button class="btn-open-composer" data-open-composer="todo">
+              <span class="open-icon-slot"></span>
+              <span>Add task</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Column 2: In Progress -->
+        <section class="kanban-column" id="column-in_progress" data-status="in_progress" aria-label="In Progress column">
+          <div class="column-header">
+            <div class="column-header-title">
+              <span>In Progress</span>
+              <span class="count-badge" id="badge-in_progress">0</span>
+            </div>
+            <button class="column-btn-add" data-add-column="in_progress" title="Add task to In Progress" aria-label="Add task to In Progress">
+              <!-- icon plus -->
+            </button>
+          </div>
+
+          <div class="column-tasks" id="tasks-in_progress" role="list"></div>
+
+          <!-- Inline Task Composer -->
+          <div class="add-task-composer" id="composer-in_progress" style="display: none;">
+            <div class="composer-form">
+              <textarea class="composer-input" id="composer-input-in_progress" placeholder="What is being worked on?"></textarea>
+              <div class="composer-actions">
+                <span class="composer-hint">Enter to add &bull; Esc to cancel</span>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" class="btn btn-secondary btn-sm" data-cancel-composer="in_progress">Cancel</button>
+                  <button type="button" class="btn btn-primary btn-sm" data-submit-composer="in_progress">Add</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding: 8px 12px;" id="btn-open-wrapper-in_progress">
+            <button class="btn-open-composer" data-open-composer="in_progress">
+              <span class="open-icon-slot"></span>
+              <span>Add task</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Column 3: Done -->
+        <section class="kanban-column" id="column-done" data-status="done" aria-label="Done column">
+          <div class="column-header">
+            <div class="column-header-title">
+              <span>Done</span>
+              <span class="count-badge" id="badge-done">0</span>
+            </div>
+            <button class="column-btn-add" data-add-column="done" title="Add task to Done" aria-label="Add task to Done">
+              <!-- icon plus -->
+            </button>
+          </div>
+
+          <div class="column-tasks" id="tasks-done" role="list"></div>
+
+          <!-- Inline Task Composer -->
+          <div class="add-task-composer" id="composer-done" style="display: none;">
+            <div class="composer-form">
+              <textarea class="composer-input" id="composer-input-done" placeholder="What was completed?"></textarea>
+              <div class="composer-actions">
+                <span class="composer-hint">Enter to add &bull; Esc to cancel</span>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" class="btn btn-secondary btn-sm" data-cancel-composer="done">Cancel</button>
+                  <button type="button" class="btn btn-primary btn-sm" data-submit-composer="done">Add</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding: 8px 12px;" id="btn-open-wrapper-done">
+            <button class="btn-open-composer" data-open-composer="done">
+              <span class="open-icon-slot"></span>
+              <span>Add task</span>
+            </button>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- Project Settings & Members Modal -->
+    <div class="modal-backdrop" id="modal-project-settings">
+      <div class="modal" role="dialog" aria-labelledby="modal-settings-title" style="max-width: 580px;">
+        <div class="modal-header">
+          <h2 class="modal-title" id="modal-settings-title">Project Settings</h2>
+          <button class="btn-ghost btn-icon" data-close-modal aria-label="Close modal">
+            <span id="close-settings-icon-slot"></span>
+          </button>
+        </div>
+
+        <div class="modal-body" style="gap: 24px;">
+          <!-- Section 1: General Details -->
+          <form id="form-edit-project" style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="edit-proj-name">Project name</label>
+              <input type="text" id="edit-proj-name" class="form-input" required minlength="2" maxlength="60">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="edit-proj-desc">Description</label>
+              <textarea id="edit-proj-desc" class="form-input" style="height: 60px; resize: vertical;" maxlength="300"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Project color</label>
+              <div class="color-swatches" id="edit-project-colors"></div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+              <button type="submit" class="btn btn-primary btn-sm" id="btn-save-project-details">Save changes</button>
+            </div>
+          </form>
+
+          <hr style="border: none; border-top: 1px solid var(--border-subtle);">
+
+          <!-- Section 2: Members Management -->
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <h3 style="font-size: var(--font-size-sm); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle);">
+                Team Members (<span id="settings-members-count">0</span>)
+              </h3>
+            </div>
+
+            <!-- Add Member Search (Owner only) -->
+            <div id="add-member-section" style="position: relative;">
+              <div class="form-input-container">
+                <input type="text" id="member-search-input" class="form-input" placeholder="Search people by name or email...">
+              </div>
+              <div class="search-results-dropdown" id="member-search-results" style="max-height: 200px;"></div>
+            </div>
+
+            <!-- Members List -->
+            <div id="project-members-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto;">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid var(--border-subtle);">
+
+          <!-- Section 3: Danger Zone -->
+          <div style="display: flex; flex-direction: column; gap: 12px;" id="danger-zone-section">
+            <h3 style="font-size: var(--font-size-sm); font-weight: 600; color: var(--priority-high);">Danger Zone</h3>
+            
+            <div style="background-color: var(--priority-high-bg); border: 1px solid rgba(229, 72, 77, 0.2); border-radius: var(--radius-md); padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+              <div>
+                <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--priority-high);">Delete this project</div>
+                <div style="font-size: var(--font-size-xs); color: var(--text-muted); margin-top: 2px;">Permanently delete this project, along with all its tasks, comments and notifications.</div>
+              </div>
+              <button type="button" class="btn btn-danger btn-sm" id="btn-open-delete-modal">Delete project</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal>Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Delete Project Modal -->
+    <div class="modal-backdrop" id="modal-confirm-delete">
+      <div class="modal" role="dialog" style="max-width: 440px;">
+        <div class="modal-header">
+          <h2 class="modal-title" style="color: var(--priority-high);">Delete Project</h2>
+          <button class="btn-ghost btn-icon" data-close-modal aria-label="Close modal">
+            <span class="close-confirm-icon-slot"></span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: var(--font-size-sm); line-height: 1.5;">
+            This action <strong>cannot</strong> be undone. Please type <code id="confirm-project-name" style="background: var(--bg-surface-2); padding: 2px 6px; border-radius: 4px; font-weight: 600;"></code> to confirm.
+          </p>
+          <input type="text" id="input-confirm-name" class="form-input" placeholder="Type project name here">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+          <button type="button" class="btn btn-danger" id="btn-confirm-delete-submit" disabled>I understand, delete project</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Card Move-to Action Sheet / Modal -->
+    <div class="modal-backdrop" id="modal-touch-move">
+      <div class="modal" role="dialog" style="max-width: 340px;">
+        <div class="modal-header">
+          <h2 class="modal-title" style="font-size: var(--font-size-md);">Move Task</h2>
+          <button class="btn-ghost btn-icon" data-close-modal aria-label="Close modal">
+            <span class="close-touch-icon-slot"></span>
+          </button>
+        </div>
+        <div class="modal-body" style="gap: 8px;" id="touch-move-actions">
+          <!-- Dynamically populated buttons -->
+        </div>
+      </div>
+    </div>
+
+  </template>
+
+  <script type="module" src="/js/pages/board.js"></script>
+</body>
+</html>

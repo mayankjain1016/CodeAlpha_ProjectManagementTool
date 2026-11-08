@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log in - TaskFlow</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <script type="module">
+    import { initTheme } from '/js/core/theme.js';
+    initTheme();
+  </script>
+</head>
+<body>
+  <div class="auth-layout">
+    <!-- Left: Brand Showcase & Pure CSS Floating Mock Board -->
+    <div class="auth-brand-side">
+      <div class="auth-brand-header">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+          <rect x="2" y="2" width="28" height="28" rx="7" fill="#14B8A6"/>
+          <rect x="8" y="9" width="16" height="3" rx="1.5" fill="#fff"/>
+          <rect x="8" y="14.5" width="16" height="3" rx="1.5" fill="#fff" opacity=".8"/>
+          <rect x="8" y="20" width="16" height="3" rx="1.5" fill="#fff" opacity=".5"/>
+        </svg>
+        <span>TaskFlow</span>
+      </div>
+
+      <div class="auth-hero-text">
+        <h1 class="auth-hero-title">High velocity project management for teams.</h1>
+        <p class="auth-hero-subtitle">Organize tasks, collaborate across sprints, and ship remarkable products together.</p>
+
+        <!-- Decorative CSS Kanban Board -->
+        <div class="mock-board" aria-hidden="true">
+          <div class="mock-column">
+            <div class="mock-col-header">To Do</div>
+            <div class="mock-card">
+              <div class="mock-card-line" style="width: 85%;"></div>
+              <div class="mock-card-line" style="width: 50%;"></div>
+              <div class="mock-card-badge" style="background: #E5484D;"></div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-card-line" style="width: 70%;"></div>
+              <div class="mock-card-badge" style="background: #F5A524;"></div>
+            </div>
+          </div>
+          <div class="mock-column">
+            <div class="mock-col-header">In Progress</div>
+            <div class="mock-card">
+              <div class="mock-card-line" style="width: 90%;"></div>
+              <div class="mock-card-line" style="width: 60%;"></div>
+              <div class="mock-card-badge" style="background: #0D9488;"></div>
+            </div>
+          </div>
+          <div class="mock-column">
+            <div class="mock-col-header">Done</div>
+            <div class="mock-card">
+              <div class="mock-card-line" style="width: 100%;"></div>
+              <div class="mock-card-badge" style="background: #3E9B6B;"></div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-card-line" style="width: 80%;"></div>
+              <div class="mock-card-badge" style="background: #3E9B6B;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size: var(--font-size-xs); color: var(--teal-200); z-index: 2;">
+        CodeAlpha Full Stack Development Internship &bull; Task 3
+      </div>
+    </div>
+
+    <!-- Right: Login Form -->
+    <div class="auth-form-side">
+      <div class="auth-form-card">
+        <div class="auth-header">
+          <h2 class="auth-title">Welcome back</h2>
+          <p class="auth-subtitle">Log in to your workspace to continue.</p>
+        </div>
+
+        <!-- Server Error Box -->
+        <div class="auth-server-error" id="server-error" role="alert"></div>
+
+        <form id="login-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="email">Work Email</label>
+            <input type="email" id="email" class="form-input" placeholder="name@company.com" required autocomplete="email">
+            <div class="form-error-msg" id="email-error"></div>
+          </div>
+
+          <div class="form-group">
+            <div class="form-label">
+              <label for="password">Password</label>
+            </div>
+            <div class="form-input-container">
+              <input type="password" id="password" class="form-input has-icon-right" placeholder="••••••••" required autocomplete="current-password">
+              <button type="button" class="form-input-toggle" id="toggle-password" aria-label="Toggle password visibility">
+                <!-- icon injected via JS -->
+              </button>
+            </div>
+            <div class="form-error-msg" id="password-error"></div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="btn-submit" style="width: 100%; margin-top: 8px;">
+            <span>Sign in</span>
+          </button>
+        </form>
+
+        <!-- Quick Demo Account Fill -->
+        <div style="background-color: var(--bg-surface-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px 14px; font-size: var(--font-size-xs); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-weight: 600; color: var(--text-main);">Demo Account</div>
+            <div style="color: var(--text-muted);">demo@taskflow.in &bull; Demo@123</div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-fill-demo">Use Demo</button>
+        </div>
+
+        <div class="auth-footer">
+          Don't have an account? <a href="/register">Sign up</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/pages/login.js"></script>
+</body>
+</html>

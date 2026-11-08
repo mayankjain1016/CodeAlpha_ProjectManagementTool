@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Tasks - TaskFlow</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <script type="module">
+    import { initTheme } from '/js/core/theme.js';
+    initTheme();
+  </script>
+</head>
+<body>
+  <!-- Global Shell Container -->
+  <div id="app-shell"></div>
+
+  <!-- My Tasks Template (Injected into #page-content) -->
+  <template id="my-tasks-template">
+    <div style="padding: 28px 32px; max-width: 1100px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 24px;">
+      
+      <!-- Page Header -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h1 style="font-size: 26px; font-weight: 700; letter-spacing: -0.02em;">My Tasks</h1>
+          <p style="font-size: var(--font-size-sm); color: var(--text-muted); margin-top: 4px;">All tasks assigned to you across all your projects.</p>
+        </div>
+
+        <!-- Filter by Status -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <select id="my-tasks-filter-status" class="filter-select" style="min-width: 140px; height: 36px;">
+            <option value="all">All tasks</option>
+            <option value="open" selected>Open tasks</option>
+            <option value="todo">To Do</option>
+            <option value="in_progress">In Progress</option>
+            <option value="done">Completed</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Task Groups Container -->
+      <div id="task-groups-container" style="display: flex; flex-direction: column; gap: 24px;">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </template>
+
+  <script type="module" src="/js/pages/myTasks.js"></script>
+</body>
+</html>
