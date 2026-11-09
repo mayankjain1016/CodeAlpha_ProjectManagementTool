@@ -68,6 +68,52 @@ All screenshots are stored in `docs/screenshots/` and verified across multiple v
 
 ---
 
+## Design System & UI Polish (Linear + Trello Aesthetic)
+
+TaskFlow received a targeted UI polish pass adhering to high-end SaaS craft standards:
+
+1. **Richer Surface & Lighting System:**
+   - Multi-layered surface scale (`--bg-surface`, `--bg-surface-2`, `--bg-surface-3`).
+   - Ambient radial teal glow at top-left (`#F3F5F8` in light mode, `#0A0D13` in dark mode).
+   - Soft two-layer shadow architecture for realistic optical depth.
+   - Consistent radii hierarchy: 6px, 10px, 14px, and 18px.
+   - Translucent adaptive borders (`rgba`) that blend naturally in both light and dark themes.
+
+2. **App Shell Refinements:**
+   - Sidebar active state with 3px left accent bar and soft pill fill.
+   - Project markers transformed into clean 8px rounded squares in project colors.
+   - Pinned user profile card at the sidebar base with avatar, credentials, and theme toggle.
+   - Frosted glass top navigation bar (`backdrop-filter: blur(12px)`).
+   - Keyboard hint chip (<kbd>Ctrl K</kbd>) that actively focuses global search.
+   - Primary "Create" button directly accessible from the topbar.
+
+3. **Dashboard Metric Cards & Team Workload:**
+   - Replaced generic pastel icon boxes with sleek metric cards displaying large tabular figures, micro progress bars, and urgency context indicators.
+   - Project cards featuring distinctive gradient headers, segmented progress tracks (Done / In Progress / To Do), and colored hover glows.
+   - Pure CSS/SVG Team Workload distribution widget tracking active project assignments.
+
+4. **Kanban Board & Card Polish:**
+   - Frosted column panels with colored status indicators (slate, amber, green dots + top accent line).
+   - Task cards with 3px left edge priority stripes, medium weight typography, and hover drag grip handles.
+   - Card dragging elevation with a 2-degree tilt and project-tinted dashed drop zone.
+   - Completed cards softly dimmed with green completion checkmarks (no noisy strikethrough).
+   - Dashed empty column placeholders utilizing full container height.
+
+5. **Avatar Overlap & Readability:**
+   - Avatar groups calibrated to 25% overlap with 2px surface isolation rings, ensuring initials remain completely legible.
+   - Smooth hover expansion spreading avatars apart with tooltips and clean `+N` overflow chips.
+
+6. **Task Drawer & Conversational Feed:**
+   - Widened to 520px with sticky project header, task key identifier (`TF-XXXX`), and instant copy-link button.
+   - Conversational comment bubbles with author metadata and a pinned bottom composer.
+
+7. **Auth Experience:**
+   - Animated drifting ambient gradient shapes.
+   - Realistic floating Kanban preview cards with real-world task metadata.
+   - Subtle demo credentials shortcut bar under the form.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -346,3 +392,4 @@ $env:MONGO_URI=""
 2. **Deep-Linkable Single-Page Components:** Utilizing URL hash fragments (`#task=<id>`) enables shareable task states while preserving vanilla JavaScript architectural simplicity.
 3. **Defense in Depth with Strict CSP:** Fine-tuning Content Security Policies with Helmet ensures that modern styling, web fonts, and dynamic module scripts coexist securely without opening vulnerabilities.
 4. **Resilient Background Polling:** Leveraging page visibility APIs (`document.visibilityState`) provides reliable notification updates without unnecessary server load during user inactivity.
+

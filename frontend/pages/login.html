@@ -17,12 +17,16 @@
   <div class="auth-layout">
     <!-- Left: Brand Showcase & Pure CSS Floating Mock Board -->
     <div class="auth-brand-side">
+      <!-- Animated Soft Drifting Mesh Shapes -->
+      <div class="auth-mesh-shape-1" aria-hidden="true"></div>
+      <div class="auth-mesh-shape-2" aria-hidden="true"></div>
+
       <div class="auth-brand-header">
-        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-          <rect x="2" y="2" width="28" height="28" rx="7" fill="#14B8A6"/>
-          <rect x="8" y="9" width="16" height="3" rx="1.5" fill="#fff"/>
-          <rect x="8" y="14.5" width="16" height="3" rx="1.5" fill="#fff" opacity=".8"/>
-          <rect x="8" y="20" width="16" height="3" rx="1.5" fill="#fff" opacity=".5"/>
+        <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+          <rect x="2" y="2" width="28" height="28" rx="8" fill="#14B8A6"/>
+          <rect x="7" y="8.5" width="18" height="3.2" rx="1.6" fill="#fff"/>
+          <rect x="7" y="14.5" width="18" height="3.2" rx="1.6" fill="#fff" opacity=".8"/>
+          <rect x="7" y="20.5" width="18" height="3.2" rx="1.6" fill="#fff" opacity=".5"/>
         </svg>
         <span>TaskFlow</span>
       </div>
@@ -31,43 +35,74 @@
         <h1 class="auth-hero-title">High velocity project management for teams.</h1>
         <p class="auth-hero-subtitle">Organize tasks, collaborate across sprints, and ship remarkable products together.</p>
 
-        <!-- Decorative CSS Kanban Board -->
+        <!-- Realistic CSS Floating Board Preview -->
         <div class="mock-board" aria-hidden="true">
           <div class="mock-column">
-            <div class="mock-col-header">To Do</div>
-            <div class="mock-card">
-              <div class="mock-card-line" style="width: 85%;"></div>
-              <div class="mock-card-line" style="width: 50%;"></div>
-              <div class="mock-card-badge" style="background: #E5484D;"></div>
+            <div class="mock-col-header">
+              <span class="mock-dot" style="background: #64748B;"></span>
+              <span>To Do</span>
             </div>
             <div class="mock-card">
-              <div class="mock-card-line" style="width: 70%;"></div>
-              <div class="mock-card-badge" style="background: #F5A524;"></div>
+              <div class="mock-card-title">Q3 Mobile App Launch</div>
+              <div class="mock-card-footer">
+                <span class="mock-badge" style="background: rgba(229, 72, 77, 0.2); color: #FFA2A2;">Urgent</span>
+                <span class="mock-avatar" style="background: #E5484D;">AS</span>
+              </div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-card-title">Design Token System</div>
+              <div class="mock-card-footer">
+                <span class="mock-badge" style="background: rgba(245, 165, 36, 0.2); color: #FCD34D;">Medium</span>
+                <span class="mock-avatar" style="background: #3B82F6;">DK</span>
+              </div>
             </div>
           </div>
+
           <div class="mock-column">
-            <div class="mock-col-header">In Progress</div>
+            <div class="mock-col-header">
+              <span class="mock-dot" style="background: #F5A524;"></span>
+              <span>In Progress</span>
+            </div>
             <div class="mock-card">
-              <div class="mock-card-line" style="width: 90%;"></div>
-              <div class="mock-card-line" style="width: 60%;"></div>
-              <div class="mock-card-badge" style="background: #0D9488;"></div>
+              <div class="mock-card-title">OAuth2 & SSO Integration</div>
+              <div class="mock-card-footer">
+                <span class="mock-badge" style="background: rgba(20, 184, 166, 0.25); color: #5EEAD4;">In sprint</span>
+                <span class="mock-avatar" style="background: #10B981;">MP</span>
+              </div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-card-title">Kanban Drag & Drop</div>
+              <div class="mock-card-footer">
+                <span class="mock-badge" style="background: rgba(59, 130, 246, 0.25); color: #93C5FD;">Active</span>
+                <span class="mock-avatar" style="background: #8B5CF6;">RN</span>
+              </div>
             </div>
           </div>
+
           <div class="mock-column">
-            <div class="mock-col-header">Done</div>
-            <div class="mock-card">
-              <div class="mock-card-line" style="width: 100%;"></div>
-              <div class="mock-card-badge" style="background: #3E9B6B;"></div>
+            <div class="mock-col-header">
+              <span class="mock-dot" style="background: #10B981;"></span>
+              <span>Done</span>
             </div>
-            <div class="mock-card">
-              <div class="mock-card-line" style="width: 80%;"></div>
-              <div class="mock-card-badge" style="background: #3E9B6B;"></div>
+            <div class="mock-card mock-card-done">
+              <div class="mock-card-title">Database Migration</div>
+              <div class="mock-card-footer">
+                <span class="mock-badge" style="background: rgba(16, 185, 129, 0.2); color: #6EE7B7;">Shipped</span>
+                <span class="mock-avatar" style="background: #0D9488;">TF</span>
+              </div>
+            </div>
+            <div class="mock-card mock-card-done">
+              <div class="mock-card-title">JWT Auth Architecture</div>
+              <div class="mock-card-footer">
+                <span class="mock-badge" style="background: rgba(16, 185, 129, 0.2); color: #6EE7B7;">Shipped</span>
+                <span class="mock-avatar" style="background: #6366F1;">PB</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div style="font-size: var(--font-size-xs); color: var(--teal-200); z-index: 2;">
+      <div style="font-size: var(--font-size-xs); color: rgba(255, 255, 255, 0.6); z-index: 2;">
         CodeAlpha Full Stack Development Internship &bull; Task 3
       </div>
     </div>
@@ -103,18 +138,18 @@
             <div class="form-error-msg" id="password-error"></div>
           </div>
 
-          <button type="submit" class="btn btn-primary" id="btn-submit" style="width: 100%; margin-top: 8px;">
+          <button type="submit" class="btn btn-primary" id="btn-submit" style="width: 100%; margin-top: 6px;">
             <span>Sign in</span>
           </button>
         </form>
 
-        <!-- Quick Demo Account Fill -->
-        <div style="background-color: var(--bg-surface-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px 14px; font-size: var(--font-size-xs); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-weight: 600; color: var(--text-main);">Demo Account</div>
-            <div style="color: var(--text-muted);">demo@taskflow.in &bull; Demo@123</div>
+        <!-- Subtle Secondary Demo Credentials Fill -->
+        <div class="auth-demo-bar">
+          <div class="auth-demo-info">
+            <span class="auth-demo-label">Demo credentials:</span>
+            <span class="auth-demo-email">demo@taskflow.in</span>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-fill-demo">Use Demo</button>
+          <button type="button" class="btn-demo-link" id="btn-fill-demo">Use Demo Account</button>
         </div>
 
         <div class="auth-footer">

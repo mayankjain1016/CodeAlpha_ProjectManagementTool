@@ -72,4 +72,18 @@
   - Git repository initialized and all 76 project files committed cleanly.
 - **Verified:**
   - Git repository committed on `main`. Remote origin status checked.
-- **What is left:** Optional Phase 7 (WebSockets) or Delivery.
+- **What is left:** None.
+
+## Phase 7: Targeted UI Polish (Linear + Trello Craft)
+- **Status:** DONE
+- **What is done:**
+  - **Tokens & Surfaces:** Multi-surface depth system (`--bg-surface-1/2/3`), subtle ambient radial teal glow at top-left (`#F3F5F8` light, `#0A0D13` dark), layered two-stage shadows, 6/10/14/18px radii, adaptive translucent borders (`rgba`).
+  - **App Shell:** Sidebar active item with 3px left accent bar and soft pill fill; rounded square project markers in project colors; quiet tabular numeric counts; pinned user profile card at sidebar bottom with avatar, credentials, and theme toggle. Topbar frosted glass blur (`backdrop-filter: blur(12px)`), `<kbd>Ctrl K</kbd>` global search shortcut chip, and quick "Create" action.
+  - **Dashboard:** Replaced pastel icon tiles with sleek tabular metric cards (count-up, inline micro-bars, urgency context). Upgraded project cards with gradient color mesh banners, segmented progress bars (Done / In Progress / To Do), readable avatar groups with hover spread, and a new pure CSS/SVG Team Workload distribution widget.
+  - **Kanban Board:** Frosted column panels with colored status indicators (slate, amber, green dots + top accent line), 3px left priority edge stripes on task cards, hover grip handles, 2-degree drag tilt elevation, dimmed Done cards with completion checkmarks, and dashed empty column placeholders.
+  - **Avatars:** Fixed overlap to 25% with 2px surface isolation rings, tooltip labels, smooth hover spread, and clean `+N` overflow chips.
+  - **Task Drawer:** Widened to 520px with sticky project header, task key (`TF-XXXX`), instant copy-link button, two-column property grid, and pinned comment composer with elevated shadow.
+  - **Auth Pages:** Animated drifting ambient gradient spheres, realistic floating Kanban board preview with authentic task metadata, and subtle secondary demo credentials trigger.
+- **Verified:**
+  - `npm run test:smoke`: 75 passed, 0 failed.
+  - `npm run test:visual`: Zero console errors, zero horizontal overflow across 1920px, 1366px, 768px, and 390px viewports in both light and dark themes. All 6 documentation screenshots regenerated.

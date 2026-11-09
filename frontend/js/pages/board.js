@@ -140,13 +140,19 @@ function setupBoardHeader() {
   const title = document.getElementById('board-title');
   const desc = document.getElementById('board-desc');
   const membersGroup = document.getElementById('board-members-group');
+  const boardContainer = document.querySelector('.board-container');
+
+  if (boardContainer && project.color) {
+    boardContainer.style.setProperty('--project-tint', `${project.color}0D`);
+    boardContainer.style.setProperty('--project-border-tint', `${project.color}40`);
+  }
 
   if (colorIndicator) colorIndicator.style.backgroundColor = project.color;
   if (title) title.textContent = project.name;
   if (desc) desc.textContent = project.description || '';
 
   if (membersGroup) {
-    membersGroup.innerHTML = renderAvatarGroup(project.members, 5, 28);
+    membersGroup.innerHTML = renderAvatarGroup(project.members, 4, 28);
     membersGroup.onclick = () => {
       openModal(document.getElementById('modal-project-settings'));
     };
@@ -224,6 +230,17 @@ function setupFilters() {
       card.style.display = match ? 'flex' : 'none';
     });
 
+    const countEl = document.getElementById('filter-results-count');
+    if (countEl) {
+      if (isFiltered) {
+        const totalVisible = Array.from(document.querySelectorAll('.task-card')).filter((c) => c.style.display !== 'none').length;
+        countEl.textContent = `Showing ${totalVisible} of ${allTasks.length}`;
+        countEl.style.display = 'inline-block';
+      } else {
+        countEl.style.display = 'none';
+      }
+    }
+
     updateColumnCounts();
   }
 
@@ -264,8 +281,24 @@ function updateColumnCounts() {
     const list = document.getElementById(`tasks-${col}`);
     const badge = document.getElementById(`badge-${col}`);
     if (list && badge) {
-      const visibleCount = Array.from(list.children).filter((c) => c.classList.contains('task-card') && c.style.display !== 'none').length;
+      const taskCards = Array.from(list.children).filter((c) => c.classList.contains('task-card'));
+      const visibleCount = taskCards.filter((c) => c.style.display !== 'none').length;
       badge.textContent = visibleCount;
+
+      let emptyPlaceholder = list.querySelector('.column-empty-state');
+      if (visibleCount === 0) {
+        if (!emptyPlaceholder) {
+          emptyPlaceholder = document.createElement('div');
+          emptyPlaceholder.className = 'column-empty-state';
+          emptyPlaceholder.innerHTML = `
+            ${icon('check-circle', 'icon-md')}
+            <span class="column-empty-text">No tasks in this column</span>
+          `;
+          list.appendChild(emptyPlaceholder);
+        }
+      } else if (emptyPlaceholder) {
+        emptyPlaceholder.remove();
+      }
     }
   });
 }
@@ -874,3 +907,4 @@ function renderSettingsMembers() {
     };
   });
 }
+

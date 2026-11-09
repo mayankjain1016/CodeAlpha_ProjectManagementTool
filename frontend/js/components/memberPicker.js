@@ -68,3 +68,4 @@ export function setupMemberSearch(inputEl, resultsContainerEl, onSelectUser) {
 
   inputEl.addEventListener('input', handleSearch);
 }
+

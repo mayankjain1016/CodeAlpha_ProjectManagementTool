@@ -1,10 +1,13 @@
 /**
  * TaskFlow Dashboard Page Logic
+ * Linear-meets-Trello aesthetic: sleek metric cards without pastel icons,
+ * project cards with gradient banners, upcoming tasks list, and team workload widget.
  */
 
 import { api } from '../core/api.js';
 import { getUser, requireAuth } from '../core/auth.js';
 import { icon } from '../core/icons.js';
+import { renderAvatar } from '../core/avatar.js';
 import { initShell } from '../core/shell.js';
 import { openModal } from '../core/modal.js';
 import { renderProjectCard } from '../components/projectCard.js';
@@ -40,6 +43,16 @@ async function initDashboard() {
     if (hours >= 12 && hours < 17) timeGreeting = 'Good afternoon';
     if (hours >= 17) timeGreeting = 'Good evening';
     greetingEl.textContent = `${timeGreeting}, ${firstName}`;
+  }
+
+  const dateEl = document.getElementById('greeting-date');
+  if (dateEl) {
+    dateEl.textContent = new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   }
 
   // Bind New Project Button
@@ -97,6 +110,9 @@ async function initDashboard() {
 
     // Render upcoming tasks
     renderUpcomingTasks(myTasks);
+
+    // Render team workload
+    renderTeamWorkload(projects, myTasks);
   } catch (err) {
     console.error('[dashboard] Failed to load dashboard:', err);
   }
@@ -109,42 +125,46 @@ function renderStatTiles({ totalProjects, openTasks, dueThisWeek, overdue }) {
   container.innerHTML = `
     <div class="stat-card">
       <div class="stat-header">
-        <span>Active projects</span>
-        <div class="stat-icon" style="background: rgba(13, 148, 136, 0.12); color: #0D9488;">
-          ${icon('folder', 'icon-md')}
-        </div>
+        <span class="stat-label">Active projects</span>
       </div>
       <div class="stat-value" id="stat-val-projects">0</div>
+      <div class="stat-micro-bar">
+        <div class="stat-micro-fill" style="width: ${Math.min(totalProjects * 25, 100)}%; background-color: var(--teal-500);"></div>
+      </div>
+      <div class="metric-context">${totalProjects} active workspace project${totalProjects === 1 ? '' : 's'}</div>
     </div>
 
     <div class="stat-card">
       <div class="stat-header">
-        <span>Assigned to me</span>
-        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">
-          ${icon('list-checks', 'icon-md')}
-        </div>
+        <span class="stat-label">Assigned to me</span>
       </div>
       <div class="stat-value" id="stat-val-tasks">0</div>
+      <div class="stat-micro-bar">
+        <div class="stat-micro-fill" style="width: ${Math.min(openTasks * 20, 100)}%; background-color: #3B82F6;"></div>
+      </div>
+      <div class="metric-context">${openTasks > 0 ? `${openTasks} tasks pending completion` : 'All tasks completed'}</div>
     </div>
 
     <div class="stat-card">
       <div class="stat-header">
-        <span>Due this week</span>
-        <div class="stat-icon" style="background: rgba(245, 165, 36, 0.12); color: #F5A524;">
-          ${icon('clock', 'icon-md')}
-        </div>
+        <span class="stat-label">Due this week</span>
       </div>
       <div class="stat-value" id="stat-val-due">0</div>
+      <div class="stat-micro-bar">
+        <div class="stat-micro-fill" style="width: ${Math.min(dueThisWeek * 25, 100)}%; background-color: #F5A524;"></div>
+      </div>
+      <div class="metric-context">${dueThisWeek > 0 ? `${dueThisWeek} scheduled in next 7 days` : 'No upcoming deadlines'}</div>
     </div>
 
     <div class="stat-card">
       <div class="stat-header">
-        <span>Overdue tasks</span>
-        <div class="stat-icon" style="background: rgba(229, 72, 77, 0.12); color: #E5484D;">
-          ${icon('alert-circle', 'icon-md')}
-        </div>
+        <span class="stat-label">Overdue tasks</span>
       </div>
       <div class="stat-value" id="stat-val-overdue" style="${overdue > 0 ? 'color: var(--priority-high);' : ''}">0</div>
+      <div class="stat-micro-bar">
+        <div class="stat-micro-fill" style="width: ${overdue > 0 ? '100%' : '0%'}; background-color: var(--priority-high);"></div>
+      </div>
+      <div class="metric-context ${overdue > 0 ? 'urgent' : ''}">${overdue > 0 ? `${overdue} require immediate action` : 'Zero overdue items'}</div>
     </div>
   `;
 
@@ -193,7 +213,7 @@ function renderUpcomingTasks(tasks) {
       if (!b.dueDate) return -1;
       return new Date(a.dueDate) - new Date(b.dueDate);
     })
-    .slice(0, 6);
+    .slice(0, 5);
 
   if (open.length === 0) {
     list.innerHTML = `
@@ -232,6 +252,74 @@ function renderUpcomingTasks(tasks) {
             ${dueChip}
           </div>
         </a>
+      `;
+    })
+    .join('');
+}
+
+function renderTeamWorkload(projects, myTasks) {
+  const container = document.getElementById('team-workload-list');
+  const countBadge = document.getElementById('workload-members-count');
+  if (!container) return;
+
+  // Aggregate distinct members across all projects
+  const memberMap = new Map();
+  projects.forEach((p) => {
+    (p.members || []).forEach((m) => {
+      if (!memberMap.has(m.id)) {
+        memberMap.set(m.id, {
+          user: m,
+          projectCount: 0,
+          taskCount: 0,
+        });
+      }
+      memberMap.get(m.id).projectCount += 1;
+    });
+  });
+
+  const currentUser = getUser();
+  if (currentUser && !memberMap.has(currentUser.id)) {
+    memberMap.set(currentUser.id, {
+      user: currentUser,
+      projectCount: projects.length,
+      taskCount: myTasks.length,
+    });
+  }
+
+  // Count my tasks for current user
+  if (currentUser && memberMap.has(currentUser.id)) {
+    memberMap.get(currentUser.id).taskCount = myTasks.length;
+  }
+
+  const members = Array.from(memberMap.values()).slice(0, 5);
+  if (countBadge) countBadge.textContent = members.length;
+
+  if (members.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: var(--font-size-xs);">
+        No team members found
+      </div>
+    `;
+    return;
+  }
+
+  // Find max projects or tasks for scaling
+  const maxProjects = Math.max(...members.map((m) => m.projectCount), 1);
+
+  container.innerHTML = members
+    .map((item) => {
+      const pct = Math.round((item.projectCount / maxProjects) * 100);
+      return `
+        <div class="workload-item">
+          ${renderAvatar(item.user, 24)}
+          <div class="workload-info">
+            <span class="workload-name" title="${escapeHtml(item.user.name)}">${escapeHtml(item.user.name)}</span>
+          </div>
+          <div class="workload-bar-wrap">
+            <div class="workload-bar-fill" style="width: ${Math.max(pct, 15)}%;"></div>
+          </div>
+          <span class="workload-count">${item.projectCount} proj</span>
+        </div>
       `;
     })
     .join('');

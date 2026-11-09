@@ -69,6 +69,20 @@ export async function initShell(activePage = 'dashboard') {
             </div>
           </div>
         </div>
+
+        <!-- Pinned User Card at Sidebar Bottom -->
+        <div class="sidebar-user-card" id="sidebar-user-card">
+          <div class="sidebar-user-info">
+            ${renderAvatar(user, 28)}
+            <div class="sidebar-user-text">
+              <span class="sidebar-user-name">${escapeHtml(user.name)}</span>
+              <span class="sidebar-user-email">${escapeHtml(user.email)}</span>
+            </div>
+          </div>
+          <button class="sidebar-theme-toggle" id="btn-sidebar-theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+            ${getTheme() === 'dark' ? icon('sun', 'icon-sm') : icon('moon', 'icon-sm')}
+          </button>
+        </div>
       </aside>
 
       <!-- Main Content -->
@@ -84,12 +98,19 @@ export async function initShell(activePage = 'dashboard') {
             <div class="global-search-container">
               <span class="global-search-icon">${icon('search', 'icon-sm')}</span>
               <input type="text" class="global-search-input" id="global-search-input" placeholder="Search tasks, projects..." autocomplete="off">
+              <kbd class="search-kbd-hint" id="search-kbd-hint">Ctrl K</kbd>
               <div class="search-results-dropdown" id="search-results-dropdown"></div>
             </div>
           </div>
 
           <!-- Topbar Actions -->
           <div class="topbar-right">
+            <!-- Quick Create Button -->
+            <button class="btn btn-primary btn-sm topbar-create-btn" id="btn-topbar-create">
+              ${icon('plus', 'icon-sm')}
+              <span>Create</span>
+            </button>
+
             <!-- Theme Toggle -->
             <button class="topbar-btn" id="btn-theme-toggle" title="Toggle theme" aria-label="Toggle theme">
               ${getTheme() === 'dark' ? icon('sun') : icon('moon')}
@@ -202,14 +223,50 @@ function setupShellEvents() {
     backdrop.onclick = toggleSidebar;
   }
 
-  // Theme toggle
+  // Theme toggles (sync topbar & sidebar toggles)
   const themeBtn = document.getElementById('btn-theme-toggle');
-  if (themeBtn) {
-    themeBtn.onclick = () => {
-      const next = toggleTheme();
-      themeBtn.innerHTML = next === 'dark' ? icon('sun') : icon('moon');
+  const sidebarThemeBtn = document.getElementById('btn-sidebar-theme-toggle');
+
+  const updateThemeIcons = (currentTheme) => {
+    const isDark = currentTheme === 'dark';
+    if (themeBtn) themeBtn.innerHTML = isDark ? icon('sun') : icon('moon');
+    if (sidebarThemeBtn) sidebarThemeBtn.innerHTML = isDark ? icon('sun', 'icon-sm') : icon('moon', 'icon-sm');
+  };
+
+  const handleThemeToggle = () => {
+    const next = toggleTheme();
+    updateThemeIcons(next);
+  };
+
+  if (themeBtn) themeBtn.onclick = handleThemeToggle;
+  if (sidebarThemeBtn) sidebarThemeBtn.onclick = handleThemeToggle;
+
+  // Topbar quick create button
+  const topbarCreateBtn = document.getElementById('btn-topbar-create');
+  if (topbarCreateBtn) {
+    topbarCreateBtn.onclick = () => {
+      const modal = document.getElementById('modal-new-project');
+      if (modal) openModal(modal);
     };
   }
+
+  // Ctrl+K Search Shortcut & Hint Chip Focus
+  const searchInput = document.getElementById('global-search-input');
+  const searchKbdHint = document.getElementById('search-kbd-hint');
+
+  if (searchKbdHint && searchInput) {
+    searchKbdHint.onclick = () => searchInput.focus();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      }
+    }
+  });
 
   // User menu toggle
   const userBtn = document.getElementById('btn-user-menu');
@@ -561,3 +618,4 @@ function startNotificationPolling() {
     }
   });
 }
+

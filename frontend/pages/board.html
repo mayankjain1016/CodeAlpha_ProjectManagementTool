@@ -79,6 +79,9 @@
             <span id="clear-icon-slot"></span>
             <span>Clear filters</span>
           </button>
+
+          <!-- Filter Results Count -->
+          <span class="filter-results-count" id="filter-results-count" style="display: none; font-size: var(--font-size-xs); color: var(--text-muted); margin-left: 6px;"></span>
         </div>
       </header>
 
@@ -89,6 +92,7 @@
         <section class="kanban-column" id="column-todo" data-status="todo" aria-label="To Do column">
           <div class="column-header">
             <div class="column-header-title">
+              <span class="column-status-dot status-dot-todo"></span>
               <span>To Do</span>
               <span class="count-badge" id="badge-todo">0</span>
             </div>
@@ -125,6 +129,7 @@
         <section class="kanban-column" id="column-in_progress" data-status="in_progress" aria-label="In Progress column">
           <div class="column-header">
             <div class="column-header-title">
+              <span class="column-status-dot status-dot-inprogress"></span>
               <span>In Progress</span>
               <span class="count-badge" id="badge-in_progress">0</span>
             </div>
@@ -161,6 +166,7 @@
         <section class="kanban-column" id="column-done" data-status="done" aria-label="Done column">
           <div class="column-header">
             <div class="column-header-title">
+              <span class="column-status-dot status-dot-done"></span>
               <span>Done</span>
               <span class="count-badge" id="badge-done">0</span>
             </div>

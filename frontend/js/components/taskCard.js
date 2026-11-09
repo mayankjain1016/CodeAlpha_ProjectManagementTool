@@ -1,6 +1,7 @@
 /**
  * TaskFlow Task Card Component
- * Produces accessible, draggable Kanban task cards with badges, avatars, and meta indicators.
+ * Linear-meets-Trello design: 3px left priority stripe, compact chips,
+ * hover grip handle, dimmed Done status with checkmark, and accessible keyboard focus.
  */
 
 import { icon } from '../core/icons.js';
@@ -24,11 +25,14 @@ export function renderTaskCard(task) {
     </span>
   ` : '';
 
+  const isDone = task.status === 'done';
+
   return `
-    <div class="task-card" 
+    <div class="task-card ${isDone ? 'is-done' : ''}" 
          id="task-${task.id}" 
          data-id="${task.id}" 
          data-status="${task.status}" 
+         data-priority="${task.priority || 'medium'}"
          data-order="${task.order}" 
          draggable="true" 
          tabindex="0" 
@@ -36,7 +40,17 @@ export function renderTaskCard(task) {
          aria-grabbed="false" 
          aria-label="Task: ${safeTitle}">
       
-      <div class="task-card-title">${safeTitle}</div>
+      <div class="task-card-content">
+        <!-- Hover Drag Handle -->
+        <span class="task-card-grip" aria-hidden="true" title="Drag to move">
+          ${icon('grip-vertical', 'icon-sm')}
+        </span>
+
+        <div class="task-card-header-row">
+          ${isDone ? `<span class="task-done-check" title="Completed">${icon('check', 'icon-sm')}</span>` : ''}
+          <div class="task-card-title">${safeTitle}</div>
+        </div>
+      </div>
 
       <div class="task-card-footer">
         <div class="task-card-badges">

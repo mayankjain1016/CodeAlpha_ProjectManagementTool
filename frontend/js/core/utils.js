@@ -152,3 +152,4 @@ export function animateCount(element, target, duration = 800) {
 
   requestAnimationFrame(update);
 }
+

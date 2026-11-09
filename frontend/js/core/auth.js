@@ -62,3 +62,4 @@ export function logout() {
   clearSession();
   window.location.replace('/login');
 }
+

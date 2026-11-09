@@ -7,6 +7,8 @@
   height: 100%;
   overflow: hidden;
   position: relative;
+  background-color: var(--bg-app);
+  background-image: radial-gradient(circle at 12% 0%, var(--project-tint, rgba(13, 148, 136, 0.05)) 0%, transparent 50%);
 }
 
 /* Board Header */
@@ -131,8 +133,11 @@
   height: calc(100% - 130px);
 }
 
+/* Frosted Panel Columns */
 .kanban-column {
-  background-color: var(--bg-surface-2);
+  background-color: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   display: flex;
@@ -140,8 +145,45 @@
   height: 100%;
   max-height: 100%;
   overflow: hidden;
+  position: relative;
+  box-shadow: var(--shadow-sm);
   transition: border-color var(--duration-fast) var(--ease-default),
               background-color var(--duration-fast) var(--ease-default);
+}
+
+[data-theme="dark"] .kanban-column {
+  background-color: rgba(23, 29, 40, 0.72);
+}
+
+/* Top Accent Line for Column Status */
+#column-todo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background-color: var(--status-todo);
+}
+
+#column-in_progress::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background-color: var(--status-inprogress);
+}
+
+#column-done::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background-color: var(--status-done);
 }
 
 .kanban-column.drag-over {
@@ -166,6 +208,18 @@
   font-weight: var(--font-weight-semibold);
   color: var(--text-main);
 }
+
+/* Column Status Dot */
+.column-status-dot {
+  width: 7.5px;
+  height: 7.5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot-todo { background-color: var(--status-todo); }
+.status-dot-inprogress { background-color: var(--status-inprogress); }
+.status-dot-done { background-color: var(--status-done); }
 
 .column-btn-add {
   width: 26px;
@@ -193,10 +247,11 @@
   gap: 10px;
 }
 
-/* Individual Task Card */
+/* Individual Task Card with 3px Priority Stripe */
 .task-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
+  border-left: 3.5px solid var(--border-strong);
   border-radius: var(--radius-md);
   padding: 12px 14px;
   display: flex;
@@ -211,19 +266,36 @@
               border-color var(--duration-fast) var(--ease-default);
 }
 
+.task-card[data-priority="high"] {
+  border-left-color: var(--priority-high);
+}
+
+.task-card[data-priority="medium"] {
+  border-left-color: var(--priority-medium);
+}
+
+.task-card[data-priority="low"] {
+  border-left-color: var(--priority-low);
+}
+
 .task-card:hover {
-  border-color: var(--border-strong);
+  border-color: var(--project-border-tint, rgba(13, 148, 136, 0.35));
+  border-left-color: inherit;
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .task-card:active {
   cursor: grabbing;
 }
 
+/* Card Dragging: 2deg tilt and elevation */
 .task-card.dragging {
-  opacity: 0.4;
-  transform: scale(0.98);
+  opacity: 0.88;
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: var(--shadow-lg);
+  cursor: grabbing;
+  z-index: 50;
 }
 
 .task-card.just-moved {
@@ -235,6 +307,37 @@
   100% { box-shadow: var(--shadow-sm); }
 }
 
+.task-card-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+}
+
+.task-card-grip {
+  opacity: 0;
+  color: var(--text-subtle);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+  margin-left: -4px;
+  transition: opacity var(--duration-fast) var(--ease-default);
+  flex-shrink: 0;
+}
+
+.task-card:hover .task-card-grip {
+  opacity: 1;
+}
+
+.task-card-header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
 .task-card-title {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
@@ -244,6 +347,23 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Done Column Cards Styling */
+.task-card.is-done {
+  opacity: 0.78;
+}
+
+.task-card.is-done .task-card-title {
+  color: var(--text-muted);
+}
+
+.task-done-check {
+  color: var(--status-done);
+  display: inline-flex;
+  align-items: center;
+  margin-top: 2px;
+  flex-shrink: 0;
 }
 
 .task-card-footer {
@@ -276,14 +396,34 @@
   color: var(--text-muted);
 }
 
-/* Insertion Placeholder for Drag & Drop */
+/* Insertion Placeholder for Drag & Drop in Project Tint */
 .drag-placeholder {
-  height: 60px;
+  height: 64px;
   border: 2px dashed var(--primary);
   border-radius: var(--radius-md);
   background-color: var(--primary-light);
   margin: 4px 0;
   transition: all var(--duration-fast) var(--ease-default);
+}
+
+/* Empty Column State */
+.column-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 28px 16px;
+  margin: auto 0;
+  border: 1.5px dashed var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-subtle);
+  text-align: center;
+}
+
+.column-empty-text {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
 }
 
 /* Inline Add Task Composer */
@@ -409,6 +549,10 @@
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background-color: var(--bg-surface);
+  z-index: 20;
 }
 
 .drawer-header-left {
@@ -535,12 +679,13 @@
   flex: 1;
   background-color: var(--bg-surface-2);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  border-radius: 4px 14px 14px 14px;
   padding: 10px 14px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   position: relative;
+  box-shadow: var(--shadow-xs);
 }
 
 .comment-header {
@@ -583,11 +728,25 @@
   word-break: break-word;
 }
 
+.drawer-composer-pinned {
+  position: sticky;
+  bottom: 0;
+  background-color: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.05);
+  padding: 12px 20px;
+  z-index: 20;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .drawer-composer-pinned {
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+}
+
 .comment-composer {
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  margin-top: 8px;
 }
 
 .comment-composer-body {
@@ -637,3 +796,4 @@
     width: 100vw;
   }
 }
+

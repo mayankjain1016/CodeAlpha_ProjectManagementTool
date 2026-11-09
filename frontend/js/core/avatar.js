@@ -1,7 +1,7 @@
 /**
  * TaskFlow Avatar Module
  * Generates local SVG/HTML avatars with deterministic dual-color gradient from avatarHue
- * and 1-2 initials. Provides avatar groups with +N overflow.
+ * and 1-2 initials. Provides avatar groups with readable ~25% overlap, hover spread, and tooltips.
  */
 
 import { escapeHtml } from './utils.js';
@@ -22,7 +22,7 @@ export function getInitials(name) {
 /**
  * Renders an avatar element HTML string.
  * @param {Object} user - { name, avatarHue }
- * @param {number} [size=32] - 20, 24, 32, or 40
+ * @param {number} [size=32] - 20, 24, 28, 32, or 40
  * @param {string} [extraClass='']
  * @returns {string} HTML string
  */
@@ -48,13 +48,13 @@ export function renderAvatar(user, size = 32, extraClass = '') {
 }
 
 /**
- * Renders a stacked avatar group with +N overflow.
+ * Renders a stacked avatar group with ~25% overlap and +N overflow.
  * @param {Array} users - Array of user objects
  * @param {number} [max=4] - Max avatars to show before +N
- * @param {number} [size=24] - Avatar size
+ * @param {number} [size=28] - Avatar size (defaults to 28px for optimal readability)
  * @returns {string} HTML string
  */
-export function renderAvatarGroup(users = [], max = 4, size = 24) {
+export function renderAvatarGroup(users = [], max = 4, size = 28) {
   if (!users || !users.length) return '';
 
   const visible = users.slice(0, max);
@@ -67,7 +67,7 @@ export function renderAvatarGroup(users = [], max = 4, size = 24) {
 
   if (remaining > 0) {
     html += `
-      <div class="avatar avatar-${size} avatar-overflow" title="${remaining} more members">
+      <div class="avatar avatar-${size} avatar-overflow" title="${remaining} more member${remaining > 1 ? 's' : ''}" aria-label="${remaining} more members">
         +${remaining}
       </div>
     `;

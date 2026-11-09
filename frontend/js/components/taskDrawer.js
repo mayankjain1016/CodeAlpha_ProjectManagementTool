@@ -124,6 +124,12 @@ function renderDrawerContent(task, comments) {
     <!-- Drawer Header -->
     <div class="drawer-header">
       <div class="drawer-header-left">
+        <span class="project-dot" style="background-color: ${currentProject?.color || '#0D9488'};" title="${escapeHtml(currentProject?.name || 'Project')}"></span>
+        <span class="drawer-task-key" style="font-size: var(--font-size-xs); font-weight: 600; color: var(--text-subtle); letter-spacing: 0.04em;">TF-${task.id.slice(-4).toUpperCase()}</span>
+        <button class="btn-ghost btn-sm" id="btn-copy-task-link" title="Copy link to task" style="font-size: 11.5px; padding: 3px 8px; height: 26px; gap: 5px;">
+          ${icon('share-2', 'icon-sm')}
+          <span>Copy link</span>
+        </button>
         <span class="saved-indicator" id="drawer-saved-indicator">
           ${icon('check', 'icon-sm')} Saved
         </span>
@@ -214,21 +220,23 @@ function renderDrawerContent(task, comments) {
           ${icon('message', 'icon-md')} Comments (<span id="drawer-comments-count">${comments.length}</span>)
         </h3>
 
-        <!-- Add Comment Box -->
-        <div class="comment-composer">
-          ${renderAvatar(currentUser, 32)}
-          <div class="comment-composer-body">
-            <textarea class="comment-input" id="drawer-comment-input" placeholder="Write a comment... (Ctrl+Enter to post)"></textarea>
-            <div class="comment-composer-footer">
-              <span style="font-size: var(--font-size-xs); color: var(--text-subtle);">Press Ctrl+Enter to submit</span>
-              <button class="btn btn-primary btn-sm" id="btn-post-comment">Comment</button>
-            </div>
-          </div>
-        </div>
-
         <!-- Comments List -->
         <div class="comments-list" id="drawer-comments-list">
           ${renderCommentsList(comments, currentUser, currentProject)}
+        </div>
+      </div>
+    </div>
+
+    <!-- Pinned Comment Composer at Bottom of Drawer -->
+    <div class="drawer-composer-pinned">
+      <div class="comment-composer">
+        ${renderAvatar(currentUser, 28)}
+        <div class="comment-composer-body">
+          <textarea class="comment-input" id="drawer-comment-input" placeholder="Write a comment... (Ctrl+Enter to post)"></textarea>
+          <div class="comment-composer-footer">
+            <span style="font-size: var(--font-size-xs); color: var(--text-subtle);">Ctrl+Enter to post</span>
+            <button class="btn btn-primary btn-sm" id="btn-post-comment">Comment</button>
+          </div>
         </div>
       </div>
     </div>
@@ -290,6 +298,18 @@ function flashSaved() {
 function attachDrawerEvents(task) {
   // Close buttons
   document.getElementById('btn-close-drawer').onclick = () => closeTaskDrawer();
+
+  // Copy link button
+  const copyBtn = document.getElementById('btn-copy-task-link');
+  if (copyBtn) {
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        showToast('Task link copied to clipboard', 'info');
+      }).catch(() => {
+        showToast('Failed to copy link', 'error');
+      });
+    };
+  }
 
   // Field change autosave helpers
   async function saveField(data) {
@@ -479,3 +499,4 @@ function attachDrawerEvents(task) {
     }
   }
 }
+

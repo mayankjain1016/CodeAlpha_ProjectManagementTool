@@ -22,9 +22,9 @@ function initRegister() {
   const passwordError = document.getElementById('password-error');
   const serverError = document.getElementById('server-error');
 
-  const bar1 = document.getElementById('bar-1');
-  const bar2 = document.getElementById('bar-2');
-  const bar3 = document.getElementById('bar-3');
+  const bar1 = document.getElementById('bar-1') || document.getElementById('str-1');
+  const bar2 = document.getElementById('bar-2') || document.getElementById('str-2');
+  const bar3 = document.getElementById('bar-3') || document.getElementById('str-3');
 
   togglePassBtn.innerHTML = icon('user', 'icon-sm');
 
@@ -46,17 +46,19 @@ function initRegister() {
     if (pass.length >= 10 && /[^A-Za-z0-9]/.test(pass)) score++;
 
     // Reset classes
-    [bar1, bar2, bar3].forEach((b) => (b.className = 'strength-bar'));
+    [bar1, bar2, bar3].forEach((b) => {
+      if (b) b.className = 'strength-bar';
+    });
 
     if (score === 1) {
-      bar1.classList.add('weak');
+      if (bar1) bar1.classList.add('weak');
     } else if (score === 2) {
-      bar1.classList.add('medium');
-      bar2.classList.add('medium');
+      if (bar1) bar1.classList.add('medium');
+      if (bar2) bar2.classList.add('medium');
     } else if (score >= 3) {
-      bar1.classList.add('strong');
-      bar2.classList.add('strong');
-      bar3.classList.add('strong');
+      if (bar1) bar1.classList.add('strong');
+      if (bar2) bar2.classList.add('strong');
+      if (bar3) bar3.classList.add('strong');
     }
   };
 
@@ -114,3 +116,4 @@ function initRegister() {
     }
   };
 }
+

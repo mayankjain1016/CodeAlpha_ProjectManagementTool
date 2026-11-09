@@ -17,12 +17,16 @@
   <div class="auth-layout">
     <!-- Left: Brand Showcase -->
     <div class="auth-brand-side">
+      <!-- Animated Soft Drifting Mesh Shapes -->
+      <div class="auth-mesh-shape-1" aria-hidden="true"></div>
+      <div class="auth-mesh-shape-2" aria-hidden="true"></div>
+
       <div class="auth-brand-header">
-        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-          <rect x="2" y="2" width="28" height="28" rx="7" fill="#14B8A6"/>
-          <rect x="8" y="9" width="16" height="3" rx="1.5" fill="#fff"/>
-          <rect x="8" y="14.5" width="16" height="3" rx="1.5" fill="#fff" opacity=".8"/>
-          <rect x="8" y="20" width="16" height="3" rx="1.5" fill="#fff" opacity=".5"/>
+        <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+          <rect x="2" y="2" width="28" height="28" rx="8" fill="#14B8A6"/>
+          <rect x="7" y="8.5" width="18" height="3.2" rx="1.6" fill="#fff"/>
+          <rect x="7" y="14.5" width="18" height="3.2" rx="1.6" fill="#fff" opacity=".8"/>
+          <rect x="7" y="20.5" width="18" height="3.2" rx="1.6" fill="#fff" opacity=".5"/>
         </svg>
         <span>TaskFlow</span>
       </div>
@@ -31,34 +35,53 @@
         <h1 class="auth-hero-title">Start managing your team's work effortlessly.</h1>
         <p class="auth-hero-subtitle">Create projects, assign tasks, collaborate in real time, and keep everyone aligned in one workspace.</p>
 
-        <!-- Decorative CSS Kanban Board -->
+        <!-- Realistic CSS Floating Board Preview -->
         <div class="mock-board" aria-hidden="true">
           <div class="mock-column">
-            <div class="mock-col-header">To Do</div>
+            <div class="mock-col-header">
+              <span class="mock-dot" style="background: #64748B;"></span>
+              <span>To Do</span>
+            </div>
             <div class="mock-card">
-              <div class="mock-card-line" style="width: 80%;"></div>
-              <div class="mock-card-badge" style="background: #E5484D;"></div>
+              <div class="mock-card-title">Setup CI/CD Pipeline</div>
+              <div class="mock-card-footer">
+                <span class="mock-badge" style="background: rgba(229, 72, 77, 0.2); color: #FFA2A2;">High</span>
+                <span class="mock-avatar" style="background: #E5484D;">AS</span>
+              </div>
             </div>
           </div>
+
           <div class="mock-column">
-            <div class="mock-col-header">In Progress</div>
+            <div class="mock-col-header">
+              <span class="mock-dot" style="background: #F5A524;"></span>
+              <span>In Progress</span>
+            </div>
             <div class="mock-card">
-              <div class="mock-card-line" style="width: 95%;"></div>
-              <div class="mock-card-line" style="width: 45%;"></div>
-              <div class="mock-card-badge" style="background: #F5A524;"></div>
+              <div class="mock-card-title">Sprint 4 Planning</div>
+              <div class="mock-card-footer">
+                <span class="mock-badge" style="background: rgba(245, 165, 36, 0.2); color: #FCD34D;">Sprint</span>
+                <span class="mock-avatar" style="background: #10B981;">MP</span>
+              </div>
             </div>
           </div>
+
           <div class="mock-column">
-            <div class="mock-col-header">Done</div>
-            <div class="mock-card">
-              <div class="mock-card-line" style="width: 100%;"></div>
-              <div class="mock-card-badge" style="background: #3E9B6B;"></div>
+            <div class="mock-col-header">
+              <span class="mock-dot" style="background: #10B981;"></span>
+              <span>Done</span>
+            </div>
+            <div class="mock-card mock-card-done">
+              <div class="mock-card-title">User Authentication</div>
+              <div class="mock-card-footer">
+                <span class="mock-badge" style="background: rgba(16, 185, 129, 0.2); color: #6EE7B7;">Shipped</span>
+                <span class="mock-avatar" style="background: #0D9488;">TF</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div style="font-size: var(--font-size-xs); color: var(--teal-200); z-index: 2;">
+      <div style="font-size: var(--font-size-xs); color: rgba(255, 255, 255, 0.6); z-index: 2;">
         CodeAlpha Full Stack Development Internship &bull; Task 3
       </div>
     </div>
@@ -83,28 +106,33 @@
 
           <div class="form-group">
             <label class="form-label" for="email">Work Email</label>
-            <input type="email" id="email" class="form-input" placeholder="name@company.com" required autocomplete="email">
+            <input type="email" id="email" class="form-input" placeholder="aarav@company.com" required autocomplete="email">
             <div class="form-error-msg" id="email-error"></div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="password">Password</label>
+            <div class="form-label">
+              <label for="password">Password</label>
+            </div>
             <div class="form-input-container">
               <input type="password" id="password" class="form-input has-icon-right" placeholder="At least 6 characters" required autocomplete="new-password">
               <button type="button" class="form-input-toggle" id="toggle-password" aria-label="Toggle password visibility">
                 <!-- icon injected via JS -->
               </button>
             </div>
-            <!-- Password Strength Meter -->
-            <div class="strength-meter" id="strength-meter">
-              <div class="strength-bar" id="bar-1"></div>
-              <div class="strength-bar" id="bar-2"></div>
-              <div class="strength-bar" id="bar-3"></div>
+            <div class="password-strength-container" id="strength-container" style="display: none;">
+              <div class="password-strength-bars">
+                <div class="strength-bar" id="str-1"></div>
+                <div class="strength-bar" id="str-2"></div>
+                <div class="strength-bar" id="str-3"></div>
+                <div class="strength-bar" id="str-4"></div>
+              </div>
+              <div class="password-strength-label" id="strength-label">Password strength</div>
             </div>
             <div class="form-error-msg" id="password-error"></div>
           </div>
 
-          <button type="submit" class="btn btn-primary" id="btn-submit" style="width: 100%; margin-top: 8px;">
+          <button type="submit" class="btn btn-primary" id="btn-submit" style="width: 100%; margin-top: 6px;">
             <span>Create account</span>
           </button>
         </form>
