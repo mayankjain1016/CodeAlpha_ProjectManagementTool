@@ -26,6 +26,25 @@ async function start() {
   server.listen(PORT, () => {
     console.log(`[server] TaskFlow running with WebSockets on port ${PORT} (${process.env.NODE_ENV})`);
   });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('[server] Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+
+  process.on('uncaughtException', (err) => {
+    console.error('[server] Uncaught Exception:', err);
+  });
+
+  function gracefulShutdown(signal) {
+    console.log(`[server] ${signal} received, closing HTTP server`);
+    server.close(() => {
+      console.log('[server] HTTP server closed cleanly');
+      process.exit(0);
+    });
+  }
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
 start();

@@ -169,3 +169,4 @@ function updateRealtimeStatusIndicator(status) {
     dot.title = 'Offline sync mode (polling active)';
   }
 }
+
