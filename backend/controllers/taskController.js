@@ -9,6 +9,7 @@ const Notification = require('../models/Notification');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { formatTask } = require('./projectController');
+const { emitToProject, emitToUser } = require('../socket');
 const {
   isValidObjectId,
   validateTaskTitle,
@@ -82,7 +83,19 @@ const createTask = asyncHandler(async (req, res) => {
     .populate('createdBy', 'name')
     .lean();
 
-  res.status(201).json({ task: formatTask(populated) });
+  const formatted = formatTask(populated);
+  emitToProject(project._id.toString(), 'task:created', formatted);
+  if (assignee && assignee !== req.user._id.toString()) {
+    emitToUser(assignee, 'notification:new', {
+      type: 'assigned',
+      project: { id: project._id.toString(), name: project.name },
+      task: { id: task._id.toString(), title: task.title },
+      actor: { id: req.user._id.toString(), name: req.user.name, avatarHue: req.user.avatarHue },
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  res.status(201).json({ task: formatted });
 });
 
 // GET /api/tasks/:id — single task with comments
@@ -197,7 +210,10 @@ const updateTask = asyncHandler(async (req, res) => {
     .populate('createdBy', 'name')
     .lean();
 
-  res.json({ task: formatTask(populated) });
+  const formatted = formatTask(populated);
+  emitToProject(task.project.toString(), 'task:updated', formatted);
+
+  res.json({ task: formatted });
 });
 
 // PATCH /api/tasks/:id/move { status, index }
@@ -281,7 +297,15 @@ const moveTask = asyncHandler(async (req, res) => {
     .populate('createdBy', 'name')
     .lean();
 
-  res.json({ task: formatTask(populated) });
+  const formatted = formatTask(populated);
+  emitToProject(task.project.toString(), 'task:moved', {
+    taskId: task._id.toString(),
+    status: formatted.status,
+    order: formatted.order,
+    task: formatted,
+  });
+
+  res.json({ task: formatted });
 });
 
 // DELETE /api/tasks/:id (creator or project owner)
@@ -312,6 +336,8 @@ const deleteTask = asyncHandler(async (req, res) => {
     updateOne: { filter: { _id: t._id }, update: { $set: { order: i } } },
   }));
   if (ops.length) await Task.bulkWrite(ops);
+
+  emitToProject(task.project.toString(), 'task:deleted', { taskId: task._id.toString() });
 
   res.json({ message: 'Task deleted' });
 });

@@ -15,6 +15,7 @@ import {
   renderPriorityBadge,
   renderDueDateChip,
 } from '../core/utils.js';
+import { onProjectEvent } from '../core/socket.js';
 
 let activeTask = null;
 let currentProject = null;
@@ -40,6 +41,54 @@ export function initTaskDrawer({ project, onUpdate, onDelete }) {
       }
     });
   }
+
+  // Close drawer on Escape key
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && activeTask) {
+      closeTaskDrawer();
+    }
+  });
+
+  // Real-time remote comment updates
+  onProjectEvent('comment:created', ({ taskId, comment }) => {
+    if (activeTask && activeTask.id === taskId) {
+      const list = document.getElementById('drawer-comments-list');
+      const noMsg = document.getElementById('no-comments-msg');
+      if (noMsg) noMsg.remove();
+      if (list && !document.getElementById(`comment-${comment.id}`)) {
+        const div = document.createElement('div');
+        div.className = 'comment-item';
+        div.id = `comment-${comment.id}`;
+        div.innerHTML = `
+          ${renderAvatar(comment.author, 32)}
+          <div class="comment-bubble">
+            <div class="comment-header">
+              <span class="comment-author">${escapeHtml(comment.author ? comment.author.name : 'Unknown')}</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="comment-time">${formatRelativeTime(comment.createdAt)}</span>
+              </div>
+            </div>
+            <div class="comment-text">${escapeHtml(comment.text)}</div>
+          </div>
+        `;
+        list.appendChild(div);
+        const countEl = document.getElementById('drawer-comments-count');
+        if (countEl) {
+          countEl.textContent = parseInt(countEl.textContent || '0', 10) + 1;
+        }
+      }
+    }
+  });
+
+  onProjectEvent('comment:deleted', ({ taskId, commentId }) => {
+    if (activeTask && activeTask.id === taskId) {
+      document.getElementById(`comment-${commentId}`)?.remove();
+      const countEl = document.getElementById('drawer-comments-count');
+      if (countEl) {
+        countEl.textContent = Math.max(0, parseInt(countEl.textContent || '0', 10) - 1);
+      }
+    }
+  });
 
   // Handle URL hash on load or hashchange
   const handleHash = () => {

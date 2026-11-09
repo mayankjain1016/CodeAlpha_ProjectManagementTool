@@ -797,3 +797,58 @@
   }
 }
 
+/* View Mode Segmented Pill */
+.view-mode-pill {
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  gap: 2px;
+}
+
+.view-mode-btn {
+  padding: 4px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.view-mode-btn:hover {
+  color: var(--text-main);
+}
+
+.view-mode-btn.active {
+  background: var(--bg-surface);
+  color: var(--text-main);
+  box-shadow: var(--shadow-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Compact Board Mode */
+.board-container.view-compact .task-card {
+  padding: 8px 10px;
+  gap: 6px;
+}
+
+.board-container.view-compact .task-card-title {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-tight);
+}
+
+.board-container.view-compact .task-card-footer {
+  margin-top: 2px;
+}
+
+.board-container.view-compact .task-card .badge {
+  font-size: 10px;
+  padding: 1px 6px;
+}
+
+

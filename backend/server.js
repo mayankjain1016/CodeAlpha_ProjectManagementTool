@@ -1,26 +1,31 @@
 /**
  * Server entry point.
- * Loads environment, connects to the database, then starts listening.
+ * Loads environment, connects to the database, initializes Socket.IO, then starts listening.
  */
 
 require('dotenv').config();
 
+const http = require('http');
 const { validateEnv } = require('./config/env');
 validateEnv();
 
 const { connectDB } = require('./config/db');
 const createApp = require('./app');
+const { initSocket } = require('./socket');
 
 async function start() {
   await connectDB();
 
   const app = createApp();
+  const server = http.createServer(app);
+  const io = initSocket(server);
+  app.set('io', io);
+
   const PORT = parseInt(process.env.PORT, 10) || 5000;
 
-  app.listen(PORT, () => {
-    console.log(`[server] TaskFlow running on port ${PORT} (${process.env.NODE_ENV})`);
+  server.listen(PORT, () => {
+    console.log(`[server] TaskFlow running with WebSockets on port ${PORT} (${process.env.NODE_ENV})`);
   });
 }
 
 start();
-

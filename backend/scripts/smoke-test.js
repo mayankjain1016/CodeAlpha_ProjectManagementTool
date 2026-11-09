@@ -285,6 +285,13 @@ async function runTests() {
   );
   assert(!!assignNotif, 'Assigned notification created');
 
+  // 30b. Mark single notification as read
+  if (commentNotif) {
+    const singleRes = await request('PATCH', `/api/notifications/${commentNotif.id}/read`, {}, tokenB);
+    assert(singleRes.status === 200, 'Mark single notification read -> 200');
+    assert(singleRes.body.notification && singleRes.body.notification.read === true, 'Notification read flag true');
+  }
+
   // 31. Mark all read
   res = await request('POST', '/api/notifications/read-all', {}, tokenB);
   assert(res.status === 200, 'Mark all read -> 200');

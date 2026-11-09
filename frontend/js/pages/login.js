@@ -24,13 +24,13 @@ function initLogin() {
   const demoBtn = document.getElementById('btn-fill-demo');
 
   // Set toggle icon
-  togglePassBtn.innerHTML = icon('search', 'icon-sm'); // or sun/moon; let's use eye/user
-  togglePassBtn.innerHTML = icon('user', 'icon-sm');
+  togglePassBtn.innerHTML = icon('eye', 'icon-sm');
 
   let showPassword = false;
   togglePassBtn.onclick = () => {
     showPassword = !showPassword;
     passwordInput.type = showPassword ? 'text' : 'password';
+    togglePassBtn.innerHTML = icon(showPassword ? 'eye-off' : 'eye', 'icon-sm');
   };
 
   // Demo fill button

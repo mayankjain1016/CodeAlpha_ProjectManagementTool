@@ -51,37 +51,58 @@
           </div>
         </div>
 
-        <!-- Filter Bar -->
-        <div class="board-filters">
-          <!-- Filter Search -->
-          <div class="filter-search-container">
-            <span class="filter-search-icon" id="filter-search-icon-slot"></span>
-            <input type="text" class="filter-input" id="filter-text" placeholder="Filter tasks by title...">
+        <!-- Filter & View Controls Bar -->
+        <div class="board-toolbar-wrap" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div class="board-filters">
+            <!-- Filter Search -->
+            <div class="filter-search-container">
+              <span class="filter-search-icon" id="filter-search-icon-slot"></span>
+              <input type="text" class="filter-input" id="filter-text" placeholder="Filter tasks by title...">
+            </div>
+
+            <!-- Assignee Filter -->
+            <select class="filter-select" id="filter-assignee">
+              <option value="all">All assignees</option>
+              <option value="me">Assigned to me</option>
+              <option value="unassigned">Unassigned</option>
+            </select>
+
+            <!-- Priority Filter -->
+            <select class="filter-select" id="filter-priority">
+              <option value="all">All priorities</option>
+              <option value="high">High priority</option>
+              <option value="medium">Medium priority</option>
+              <option value="low">Low priority</option>
+            </select>
+
+            <!-- Clear Filters -->
+            <button type="button" class="btn-clear-filters" id="btn-clear-filters" style="display: none;">
+              <span id="clear-icon-slot"></span>
+              <span>Clear filters</span>
+            </button>
+
+            <!-- Filter Results Count -->
+            <span class="filter-results-count" id="filter-results-count" style="display: none; font-size: var(--font-size-xs); color: var(--text-muted); margin-left: 6px;"></span>
           </div>
 
-          <!-- Assignee Filter -->
-          <select class="filter-select" id="filter-assignee">
-            <option value="all">All assignees</option>
-            <option value="me">Assigned to me</option>
-            <option value="unassigned">Unassigned</option>
-          </select>
+          <!-- View Controls: Sort & Compact Toggle -->
+          <div class="board-view-controls" style="display: flex; align-items: center; gap: 8px;">
+            <!-- Sort Selector -->
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span id="sort-icon-slot" style="color: var(--text-subtle); display: flex; align-items: center;"></span>
+              <select class="filter-select" id="toolbar-sort" title="Sort tasks">
+                <option value="manual">Manual order</option>
+                <option value="due_date">Due date</option>
+                <option value="priority">Priority (High first)</option>
+              </select>
+            </div>
 
-          <!-- Priority Filter -->
-          <select class="filter-select" id="filter-priority">
-            <option value="all">All priorities</option>
-            <option value="high">High priority</option>
-            <option value="medium">Medium priority</option>
-            <option value="low">Low priority</option>
-          </select>
-
-          <!-- Clear Filters -->
-          <button type="button" class="btn-clear-filters" id="btn-clear-filters" style="display: none;">
-            <span id="clear-icon-slot"></span>
-            <span>Clear filters</span>
-          </button>
-
-          <!-- Filter Results Count -->
-          <span class="filter-results-count" id="filter-results-count" style="display: none; font-size: var(--font-size-xs); color: var(--text-muted); margin-left: 6px;"></span>
+            <!-- View Mode Segmented Pill -->
+            <div class="view-mode-pill" id="view-mode-toggle" title="Toggle Comfortable or Compact view">
+              <button type="button" class="view-mode-btn active" id="btn-view-comfortable" data-mode="comfortable">Comfortable</button>
+              <button type="button" class="view-mode-btn" id="btn-view-compact" data-mode="compact">Compact</button>
+            </div>
+          </div>
         </div>
       </header>
 

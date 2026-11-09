@@ -1,23 +1,26 @@
 /**
  * TaskFlow Kanban Board Page Logic
  * Complete Drag & Drop, Keyboard Navigation, Inline Task Creation,
- * Deep-linkable Task Drawer, Filters, and Project Settings.
+ * Deep-linkable Task Drawer, Filters, View Modes (Comfortable/Compact),
+ * Toolbar Sorting, and Real-Time WebSockets (Socket.IO).
  */
 
 import { api } from '../core/api.js';
 import { getUser, requireAuth } from '../core/auth.js';
 import { icon } from '../core/icons.js';
 import { renderAvatar, renderAvatarGroup } from '../core/avatar.js';
-import { initShell, loadSidebarData } from '../core/shell.js';
+import { initShell, setBreadcrumb, loadSidebarData } from '../core/shell.js';
 import { openModal, closeModal } from '../core/modal.js';
 import { showToast } from '../core/toast.js';
 import { escapeHtml } from '../core/utils.js';
 import { renderTaskCard } from '../components/taskCard.js';
 import { initTaskDrawer, openTaskDrawer } from '../components/taskDrawer.js';
 import { setupMemberSearch } from '../components/memberPicker.js';
+import { joinProjectRoom, leaveProjectRoom, onProjectEvent } from '../core/socket.js';
 
 let project = null;
 let allTasks = [];
+let currentSortMode = 'manual'; // 'manual' | 'due_date' | 'priority'
 let draggedTaskId = null;
 let keyboardGrabbedTask = null;
 let dragPlaceholder = null;
@@ -39,9 +42,6 @@ async function initBoardPage() {
   contentArea.innerHTML = '';
   contentArea.appendChild(template.content.cloneNode(true));
 
-  // Inject Icons into slots
-  injectPageIcons();
-
   // Extract Project ID from URL (/projects/:id)
   const pathParts = window.location.pathname.split('/');
   const projectId = pathParts[pathParts.length - 1];
@@ -51,19 +51,28 @@ async function initBoardPage() {
     return;
   }
 
+  // Inject Icons into slots
+  injectPageIcons();
+
   // Fetch Project and Tasks
   try {
     const res = await api.get(`/projects/${projectId}`);
     project = res.project;
     allTasks = res.tasks || [];
 
+    // Context breadcrumb
+    setBreadcrumb(project.name, project.color);
+
     setupBoardHeader();
     setupFilters();
+    setupViewMode();
+    setupSorting();
     setupComposers();
     renderAllTasks();
     setupDragAndDrop();
     setupKeyboardNavigation();
     setupProjectSettings();
+    setupRealtimeEvents(projectId);
 
     // Init Drawer
     initTaskDrawer({
@@ -75,7 +84,7 @@ async function initBoardPage() {
         } else {
           allTasks.push(updatedTask);
         }
-        if (isMoved) {
+        if (isMoved || currentSortMode !== 'manual') {
           renderAllTasks();
         } else {
           // Update card in place
@@ -101,18 +110,34 @@ async function initBoardPage() {
 }
 
 function injectPageIcons() {
-  document.getElementById('btn-invite-member').innerHTML = `${icon('users', 'icon-sm')} <span>Members</span>`;
-  document.getElementById('btn-project-settings').innerHTML = icon('settings', 'icon-md');
-  document.getElementById('filter-search-icon-slot').innerHTML = icon('search', 'icon-sm');
-  document.getElementById('clear-icon-slot').innerHTML = icon('x', 'icon-sm');
-  document.getElementById('close-settings-icon-slot').innerHTML = icon('x', 'icon-md');
+  const inviteBtn = document.getElementById('btn-invite-member');
+  if (inviteBtn) inviteBtn.innerHTML = `${icon('users', 'icon-sm')} <span>Members</span>`;
+
+  const settingsBtn = document.getElementById('btn-project-settings');
+  if (settingsBtn) settingsBtn.innerHTML = icon('settings', 'icon-md');
+
+  const searchSlot = document.getElementById('filter-search-icon-slot');
+  if (searchSlot) searchSlot.innerHTML = icon('search', 'icon-sm');
+
+  const clearSlot = document.getElementById('clear-icon-slot');
+  if (clearSlot) clearSlot.innerHTML = icon('x', 'icon-sm');
+
+  const sortSlot = document.getElementById('sort-icon-slot');
+  if (sortSlot) sortSlot.innerHTML = icon('sort', 'icon-sm');
+
+  const closeSettings = document.getElementById('close-settings-icon-slot');
+  if (closeSettings) closeSettings.innerHTML = icon('x', 'icon-md');
+
   document.querySelectorAll('.close-confirm-icon-slot, .close-touch-icon-slot').forEach((el) => {
     el.innerHTML = icon('x', 'icon-md');
   });
 
   COLUMNS.forEach((col) => {
-    document.querySelector(`[data-add-column="${col}"]`).innerHTML = icon('plus', 'icon-sm');
-    document.querySelector(`[data-open-composer="${col}"] .open-icon-slot`).innerHTML = icon('plus', 'icon-sm');
+    const addCol = document.querySelector(`[data-add-column="${col}"]`);
+    if (addCol) addCol.innerHTML = icon('plus', 'icon-sm');
+
+    const openComposer = document.querySelector(`[data-open-composer="${col}"] .open-icon-slot`);
+    if (openComposer) openComposer.innerHTML = icon('plus', 'icon-sm');
   });
 }
 
@@ -172,6 +197,145 @@ function setupBoardHeader() {
       openModal(document.getElementById('modal-project-settings'));
     };
   }
+}
+
+/**
+ * Comfortable vs Compact Board View Mode Toggle
+ */
+function setupViewMode() {
+  const container = document.querySelector('.board-container');
+  const btnComfortable = document.getElementById('btn-view-comfortable');
+  const btnCompact = document.getElementById('btn-view-compact');
+
+  if (!container || !btnComfortable || !btnCompact) return;
+
+  const currentMode = localStorage.getItem('taskflow_board_view_mode') || 'comfortable';
+
+  const setMode = (mode) => {
+    localStorage.setItem('taskflow_board_view_mode', mode);
+    if (mode === 'compact') {
+      container.classList.add('view-compact');
+      btnCompact.classList.add('active');
+      btnComfortable.classList.remove('active');
+    } else {
+      container.classList.remove('view-compact');
+      btnComfortable.classList.add('active');
+      btnCompact.classList.remove('active');
+    }
+  };
+
+  setMode(currentMode);
+
+  btnComfortable.onclick = () => setMode('comfortable');
+  btnCompact.onclick = () => setMode('compact');
+}
+
+/**
+ * Board Toolbar Sorting (Manual, Due date, Priority)
+ */
+function setupSorting() {
+  const select = document.getElementById('toolbar-sort');
+  if (!select) return;
+
+  select.onchange = () => {
+    currentSortMode = select.value;
+    renderAllTasks();
+  };
+}
+
+/**
+ * Real-Time WebSockets Event Handling
+ */
+function setupRealtimeEvents(projectId) {
+  joinProjectRoom(projectId);
+
+  window.addEventListener('beforeunload', () => {
+    leaveProjectRoom(projectId);
+  });
+
+  // Task created remotely
+  onProjectEvent('task:created', (newTask) => {
+    if (!newTask || newTask.project !== project.id) return;
+    if (allTasks.some((t) => t.id === newTask.id)) return;
+
+    allTasks.push(newTask);
+    const list = document.getElementById(`tasks-${newTask.status}`);
+    if (list) {
+      const temp = document.createElement('div');
+      temp.innerHTML = renderTaskCard(newTask);
+      const card = temp.firstElementChild;
+      list.appendChild(card);
+      attachCardEvents(card);
+      card.classList.add('just-moved');
+      setTimeout(() => card.classList.remove('just-moved'), 1200);
+      updateColumnCounts();
+    }
+  });
+
+  // Task updated remotely
+  onProjectEvent('task:updated', (updatedTask) => {
+    if (!updatedTask || updatedTask.project !== project.id) return;
+    const idx = allTasks.findIndex((t) => t.id === updatedTask.id);
+    if (idx !== -1) {
+      allTasks[idx] = updatedTask;
+    } else {
+      allTasks.push(updatedTask);
+    }
+    const card = document.getElementById(`task-${updatedTask.id}`);
+    if (card) {
+      const temp = document.createElement('div');
+      temp.innerHTML = renderTaskCard(updatedTask);
+      card.replaceWith(temp.firstElementChild);
+      attachCardEvents(document.getElementById(`task-${updatedTask.id}`));
+    }
+    updateColumnCounts();
+  });
+
+  // Task moved remotely
+  onProjectEvent('task:moved', ({ taskId, status, order, task: updatedTask }) => {
+    const idx = allTasks.findIndex((t) => t.id === taskId);
+    if (idx !== -1 && updatedTask) {
+      allTasks[idx] = updatedTask;
+    }
+    renderAllTasks();
+  });
+
+  // Task deleted remotely
+  onProjectEvent('task:deleted', ({ taskId }) => {
+    allTasks = allTasks.filter((t) => t.id !== taskId);
+    document.getElementById(`task-${taskId}`)?.remove();
+    updateColumnCounts();
+  });
+
+  // Comment created remotely
+  onProjectEvent('comment:created', ({ taskId, comment }) => {
+    const task = allTasks.find((t) => t.id === taskId);
+    if (task) {
+      task.commentsCount = (task.commentsCount || 0) + 1;
+      const card = document.getElementById(`task-${taskId}`);
+      if (card) {
+        const countSpan = card.querySelector('.task-comment-count');
+        if (countSpan) countSpan.textContent = task.commentsCount;
+      }
+    }
+  });
+
+  // Member added or removed remotely
+  onProjectEvent('member:added', ({ project: updatedProj }) => {
+    if (updatedProj && updatedProj.id === project.id) {
+      project = updatedProj;
+      setupBoardHeader();
+      renderSettingsMembers();
+    }
+  });
+
+  onProjectEvent('project:updated', (updatedProj) => {
+    if (updatedProj && updatedProj.id === project.id) {
+      project = updatedProj;
+      setupBoardHeader();
+      renderSettingsMembers();
+    }
+  });
 }
 
 /* ========================================================
@@ -260,16 +424,28 @@ function setupFilters() {
    Task Rendering & Counts
    ======================================================== */
 function renderAllTasks() {
+  const priorityRank = { high: 0, medium: 1, low: 2 };
+
   COLUMNS.forEach((col) => {
     const list = document.getElementById(`tasks-${col}`);
     if (!list) return;
 
-    const columnTasks = allTasks
-      .filter((t) => t.status === col)
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
+    let columnTasks = allTasks.filter((t) => t.status === col);
+
+    if (currentSortMode === 'due_date') {
+      columnTasks.sort((a, b) => {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      });
+    } else if (currentSortMode === 'priority') {
+      columnTasks.sort((a, b) => (priorityRank[a.priority] ?? 1) - (priorityRank[b.priority] ?? 1));
+    } else {
+      // Manual order
+      columnTasks.sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
 
     list.innerHTML = columnTasks.map(renderTaskCard).join('');
-
     list.querySelectorAll('.task-card').forEach(attachCardEvents);
   });
 
@@ -309,7 +485,6 @@ function attachCardEvents(card) {
 
   // Click opens drawer
   card.onclick = (e) => {
-    // If clicking menu button, open touch menu instead
     if (e.target.closest('[data-card-menu]')) {
       e.stopPropagation();
       openTouchMoveModal(taskId);
@@ -325,7 +500,6 @@ function attachCardEvents(card) {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', taskId);
 
-    // Create placeholder element
     if (!dragPlaceholder) {
       dragPlaceholder = document.createElement('div');
       dragPlaceholder.className = 'drag-placeholder';
@@ -368,7 +542,8 @@ function setupComposers() {
     };
 
     openBtn.onclick = openComposer;
-    document.querySelector(`[data-add-column="${col}"]`).onclick = openComposer;
+    const addCol = document.querySelector(`[data-add-column="${col}"]`);
+    if (addCol) addCol.onclick = openComposer;
 
     cancelBtn.onclick = closeComposer;
 
@@ -438,7 +613,6 @@ function setupDragAndDrop() {
         taskListEl.scrollTop += 8;
       }
 
-      // Determine insertion position based on mouse Y
       const afterElement = getDragAfterElement(taskListEl, e.clientY);
       if (!dragPlaceholder) {
         dragPlaceholder = document.createElement('div');
@@ -469,14 +643,12 @@ function setupDragAndDrop() {
       const task = allTasks.find((t) => t.id === taskId);
       if (!card || !task) return;
 
-      // Calculate new index inside target column
       const cardsInTarget = Array.from(taskListEl.children).filter((el) => el.classList.contains('task-card'));
       let targetIndex = 0;
 
       if (dragPlaceholder && dragPlaceholder.parentNode === taskListEl) {
         const children = Array.from(taskListEl.children);
         const placeholderIdx = children.indexOf(dragPlaceholder);
-        // Exclude the dragged card itself if already in this column
         const cardsBeforePlaceholder = children.slice(0, placeholderIdx).filter((el) => el.classList.contains('task-card') && el !== card);
         targetIndex = cardsBeforePlaceholder.length;
       } else {
@@ -485,12 +657,10 @@ function setupDragAndDrop() {
 
       dragPlaceholder?.remove();
 
-      // Check if actually changed
       if (task.status === colName && task.order === targetIndex) {
         return;
       }
 
-      // Optimistic UI move
       const oldStatus = task.status;
       const oldOrder = task.order;
 
@@ -508,25 +678,15 @@ function setupDragAndDrop() {
 
       updateColumnCounts();
 
-      // Call API
       try {
         const res = await api.patch(`/tasks/${taskId}/move`, {
           status: colName,
           index: targetIndex,
         });
 
-        // Update task object with server response
         const idx = allTasks.findIndex((t) => t.id === taskId);
         if (idx !== -1) allTasks[idx] = res.task;
-
-        // Re-align orders in local array
-        allTasks.forEach((t) => {
-          if (t.status === colName && t.id !== taskId) {
-            // Updated orders will sync on next fetch
-          }
-        });
       } catch (err) {
-        // Rollback
         showToast(`Move failed: ${err.message}`, 'error');
         task.status = oldStatus;
         task.order = oldOrder;
@@ -559,7 +719,6 @@ function getDragAfterElement(container, y) {
    ======================================================== */
 function setupKeyboardNavigation() {
   window.addEventListener('keydown', async (e) => {
-    // Only handle if focused on a task card
     const focusedCard = document.activeElement?.closest('.task-card');
     if (!focusedCard) return;
 
@@ -571,13 +730,11 @@ function setupKeyboardNavigation() {
     if (e.key === ' ' || e.code === 'Space') {
       e.preventDefault();
       if (!keyboardGrabbedTask) {
-        // Pick up
         keyboardGrabbedTask = task;
         focusedCard.setAttribute('aria-grabbed', 'true');
         focusedCard.style.outline = '3px solid var(--primary)';
         showToast(`Picked up "${task.title}". Use arrow keys to move, Space to drop.`, 'info', 2500);
       } else if (keyboardGrabbedTask.id === task.id) {
-        // Drop
         focusedCard.setAttribute('aria-grabbed', 'false');
         focusedCard.style.outline = '';
         keyboardGrabbedTask = null;
@@ -595,7 +752,7 @@ function setupKeyboardNavigation() {
       return;
     }
 
-    // Arrow keys while card is picked up
+    // Arrow keys while picked up
     if (keyboardGrabbedTask && keyboardGrabbedTask.id === task.id) {
       const currentColIndex = COLUMNS.indexOf(task.status);
       let targetStatus = task.status;
@@ -619,7 +776,6 @@ function setupKeyboardNavigation() {
         return;
       }
 
-      // Execute move
       try {
         const res = await api.patch(`/tasks/${task.id}/move`, {
           status: targetStatus,
@@ -739,27 +895,25 @@ function setupProjectSettings() {
   const descInput = document.getElementById('edit-proj-desc');
   const colorsContainer = document.getElementById('edit-project-colors');
   const form = document.getElementById('form-edit-project');
-  const membersList = document.getElementById('project-members-list');
-  const membersCountEl = document.getElementById('settings-members-count');
   const addMemberSection = document.getElementById('add-member-section');
   const dangerZone = document.getElementById('danger-zone-section');
 
   const currentUser = getUser();
   const isOwner = project.owner && currentUser && project.owner.id === currentUser.id;
 
-  // Pre-fill form
   nameInput.value = project.name;
   descInput.value = project.description || '';
 
   if (!isOwner) {
     nameInput.disabled = true;
     descInput.disabled = true;
-    document.getElementById('btn-save-project-details').style.display = 'none';
+    const saveBtn = document.getElementById('btn-save-project-details');
+    if (saveBtn) saveBtn.style.display = 'none';
     if (addMemberSection) addMemberSection.style.display = 'none';
     if (dangerZone) dangerZone.style.display = 'none';
   }
 
-  // Render color swatches
+  // Render swatches
   colorsContainer.innerHTML = PROJECT_COLORS.map(
     (c, i) => `
       <input type="radio" name="editProjectColor" id="edit-color-${i}" value="${c}" class="color-swatch-radio" ${
@@ -769,10 +923,8 @@ function setupProjectSettings() {
     `
   ).join('');
 
-  // Render members list
   renderSettingsMembers();
 
-  // Save Details Submit
   form.onsubmit = async (e) => {
     e.preventDefault();
     if (!isOwner) return;
@@ -795,7 +947,7 @@ function setupProjectSettings() {
     }
   };
 
-  // Add Member Debounced Search
+  // Add Member
   if (isOwner) {
     const searchInput = document.getElementById('member-search-input');
     const resultsContainer = document.getElementById('member-search-results');
@@ -815,7 +967,7 @@ function setupProjectSettings() {
     });
   }
 
-  // Delete Project Danger Zone
+  // Delete Project
   const openDeleteModalBtn = document.getElementById('btn-open-delete-modal');
   const confirmModal = document.getElementById('modal-confirm-delete');
   const confirmNameSpan = document.getElementById('confirm-project-name');
@@ -854,7 +1006,7 @@ function renderSettingsMembers() {
   const currentUser = getUser();
   const isOwner = project.owner && currentUser && project.owner.id === currentUser.id;
 
-  countEl.textContent = (project.members || []).length;
+  if (countEl) countEl.textContent = (project.members || []).length;
 
   list.innerHTML = (project.members || [])
     .map((m) => {
@@ -889,7 +1041,6 @@ function renderSettingsMembers() {
     })
     .join('');
 
-  // Bind remove buttons
   list.querySelectorAll('[data-remove-member]').forEach((btn) => {
     btn.onclick = async () => {
       const userId = btn.getAttribute('data-remove-member');
@@ -907,4 +1058,3 @@ function renderSettingsMembers() {
     };
   });
 }
-

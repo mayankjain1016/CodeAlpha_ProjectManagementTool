@@ -9,6 +9,7 @@ const Notification = require('../models/Notification');
 const User = require('../models/User');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
+const { emitToProject, emitToUser } = require('../socket');
 const {
   isValidObjectId,
   validateProjectName,
@@ -144,7 +145,9 @@ const updateProject = asyncHandler(async (req, res) => {
 
   await project.save();
   await populateProject(project);
-  res.json({ project: formatProjectDoc(project) });
+  const formattedProj = formatProjectDoc(project);
+  emitToProject(project._id.toString(), 'project:updated', formattedProj);
+  res.json({ project: formattedProj });
 });
 
 // DELETE /api/projects/:id (owner only)
@@ -189,7 +192,24 @@ const addMember = asyncHandler(async (req, res) => {
   }
 
   await populateProject(project);
-  res.json({ project: formatProjectDoc(project) });
+  const formattedProj = formatProjectDoc(project);
+
+  emitToProject(project._id.toString(), 'member:added', {
+    projectId: project._id.toString(),
+    project: formattedProj,
+    user: { id: user._id.toString(), name: user.name, email: user.email, avatarHue: user.avatarHue },
+  });
+
+  if (userId !== req.user._id.toString()) {
+    emitToUser(userId, 'notification:new', {
+      type: 'added_to_project',
+      project: { id: project._id.toString(), name: project.name },
+      actor: { id: req.user._id.toString(), name: req.user.name, avatarHue: req.user.avatarHue },
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  res.json({ project: formattedProj });
 });
 
 // DELETE /api/projects/:id/members/:userId (owner only, cannot remove owner)
@@ -216,7 +236,9 @@ const removeMember = asyncHandler(async (req, res) => {
 
   await project.save();
   await populateProject(project);
-  res.json({ project: formatProjectDoc(project) });
+  const formattedProj = formatProjectDoc(project);
+  emitToProject(project._id.toString(), 'project:updated', formattedProj);
+  res.json({ project: formattedProj });
 });
 
 /* ---- Helpers ---- */

@@ -1,7 +1,8 @@
 /**
  * TaskFlow App Shell
- * Injects and coordinates the global navigation, header, theme toggle,
- * user menu, notification polling, and global search.
+ * Coordinates global navigation, collapsible sidebar, context breadcrumbs,
+ * Linear-style Command Palette (Ctrl+K), real-time WebSockets, notifications,
+ * and user theme preferences.
  */
 
 import { getUser, logout } from './auth.js';
@@ -12,9 +13,12 @@ import { toggleTheme, getTheme } from './theme.js';
 import { openModal, closeModal } from './modal.js';
 import { showToast } from './toast.js';
 import { escapeHtml, formatRelativeTime, debounce } from './utils.js';
+import { initClientSocket } from './socket.js';
 
 let notificationTimer = null;
 let currentProjects = [];
+let paletteActiveIndex = 0;
+let paletteItems = [];
 
 export async function initShell(activePage = 'dashboard') {
   const user = getUser();
@@ -23,6 +27,15 @@ export async function initShell(activePage = 'dashboard') {
   const shellRoot = document.getElementById('app-shell');
   if (!shellRoot) return;
 
+  const isCollapsed = localStorage.getItem('taskflow_sidebar_collapsed') === 'true';
+
+  const breadcrumbTitle =
+    activePage === 'dashboard'
+      ? 'Dashboard'
+      : activePage === 'my-tasks'
+      ? 'My Tasks'
+      : 'Board';
+
   // Build the shell HTML structure
   shellRoot.innerHTML = `
     <div class="app-container">
@@ -30,7 +43,7 @@ export async function initShell(activePage = 'dashboard') {
       <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
       <!-- Left Sidebar -->
-      <aside class="app-sidebar" id="app-sidebar">
+      <aside class="app-sidebar ${isCollapsed ? 'collapsed' : ''}" id="app-sidebar">
         <div class="sidebar-header">
           <a href="/dashboard" class="brand-link">
             <span class="brand-icon">
@@ -42,15 +55,18 @@ export async function initShell(activePage = 'dashboard') {
             </span>
             <span>TaskFlow</span>
           </a>
+          <button class="sidebar-collapse-btn" id="btn-sidebar-collapse" title="Collapse sidebar" aria-label="Collapse sidebar">
+            ${icon('sidebar', 'icon-sm')}
+          </button>
         </div>
 
         <div class="sidebar-scroll">
           <div class="nav-section">
-            <a href="/dashboard" class="nav-item ${activePage === 'dashboard' ? 'active' : ''}">
+            <a href="/dashboard" class="nav-item ${activePage === 'dashboard' ? 'active' : ''}" title="Dashboard">
               ${icon('layout-grid')}
               <span>Dashboard</span>
             </a>
-            <a href="/my-tasks" class="nav-item ${activePage === 'my-tasks' ? 'active' : ''}">
+            <a href="/my-tasks" class="nav-item ${activePage === 'my-tasks' ? 'active' : ''}" title="My Tasks">
               ${icon('list-checks')}
               <span>My Tasks</span>
               <span class="nav-counter" id="my-tasks-counter">0</span>
@@ -89,22 +105,33 @@ export async function initShell(activePage = 'dashboard') {
       <div class="app-main">
         <!-- Top Bar -->
         <header class="app-topbar">
-          <div class="topbar-left">
+          <div class="topbar-left" style="display: flex; align-items: center; gap: 16px;">
             <button class="mobile-menu-btn" id="btn-mobile-menu" aria-label="Toggle menu">
               ${icon('layout-grid')}
             </button>
 
-            <!-- Global Search -->
-            <div class="global-search-container">
+            <!-- Context Breadcrumbs -->
+            <nav class="topbar-breadcrumbs" id="topbar-breadcrumbs" aria-label="Breadcrumb">
+              <a href="/dashboard" class="breadcrumb-item breadcrumb-home">Workspace</a>
+              <span class="breadcrumb-separator">/</span>
+              <span class="breadcrumb-item breadcrumb-current" id="breadcrumb-current-page">
+                ${breadcrumbTitle}
+              </span>
+            </nav>
+
+            <!-- Global Search & Command Trigger -->
+            <div class="global-search-container" id="global-search-container">
               <span class="global-search-icon">${icon('search', 'icon-sm')}</span>
-              <input type="text" class="global-search-input" id="global-search-input" placeholder="Search tasks, projects..." autocomplete="off">
+              <input type="text" class="global-search-input" id="global-search-input" placeholder="Search or jump to..." readonly autocomplete="off">
               <kbd class="search-kbd-hint" id="search-kbd-hint">Ctrl K</kbd>
-              <div class="search-results-dropdown" id="search-results-dropdown"></div>
             </div>
           </div>
 
           <!-- Topbar Actions -->
           <div class="topbar-right">
+            <!-- Quiet Real-Time Connection Dot -->
+            <div class="realtime-status-dot connected" id="realtime-status-dot" title="Real-time sync active"></div>
+
             <!-- Quick Create Button -->
             <button class="btn btn-primary btn-sm topbar-create-btn" id="btn-topbar-create">
               ${icon('plus', 'icon-sm')}
@@ -163,6 +190,28 @@ export async function initShell(activePage = 'dashboard') {
       </div>
     </div>
 
+    <!-- Global Command Palette Modal (Ctrl+K) -->
+    <div class="palette-backdrop" id="command-palette-backdrop">
+      <div class="palette-dialog" role="dialog" aria-modal="true" aria-label="Command palette">
+        <div class="palette-search-wrap">
+          <span class="palette-search-icon">${icon('command', 'icon-sm')}</span>
+          <input type="text" class="palette-input" id="palette-input" placeholder="Type a command or search..." autocomplete="off">
+          <kbd class="palette-esc-chip" id="palette-esc-chip">ESC</kbd>
+        </div>
+        <div class="palette-results" id="palette-results">
+          <!-- Dynamic Results -->
+        </div>
+        <div class="palette-footer">
+          <div class="palette-shortcut-hints">
+            <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+            <span><kbd>↵</kbd> Select</span>
+            <span><kbd>ESC</kbd> Close</span>
+          </div>
+          <span class="palette-brand">TaskFlow</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Global New Project Modal -->
     <div class="modal-backdrop" id="modal-new-project">
       <div class="modal" role="dialog" aria-labelledby="modal-new-proj-title">
@@ -203,6 +252,21 @@ export async function initShell(activePage = 'dashboard') {
   setupShellEvents();
   loadSidebarData();
   startNotificationPolling();
+  setupCommandPalette();
+  initClientSocket();
+}
+
+/**
+ * Updates the breadcrumb current page slot (used by board page to set project name).
+ */
+export function setBreadcrumb(title, color = null) {
+  const el = document.getElementById('breadcrumb-current-page');
+  if (!el) return;
+  if (color) {
+    el.innerHTML = `<span class="project-dot" style="background-color: ${color};"></span><span>${escapeHtml(title)}</span>`;
+  } else {
+    el.textContent = title;
+  }
 }
 
 /**
@@ -221,6 +285,16 @@ function setupShellEvents() {
     };
     mobileBtn.onclick = toggleSidebar;
     backdrop.onclick = toggleSidebar;
+  }
+
+  // Sidebar desktop collapse toggle
+  const collapseBtn = document.getElementById('btn-sidebar-collapse');
+  if (collapseBtn && sidebar) {
+    collapseBtn.onclick = () => {
+      const willCollapse = !sidebar.classList.contains('collapsed');
+      sidebar.classList.toggle('collapsed', willCollapse);
+      localStorage.setItem('taskflow_sidebar_collapsed', willCollapse ? 'true' : 'false');
+    };
   }
 
   // Theme toggles (sync topbar & sidebar toggles)
@@ -250,24 +324,6 @@ function setupShellEvents() {
     };
   }
 
-  // Ctrl+K Search Shortcut & Hint Chip Focus
-  const searchInput = document.getElementById('global-search-input');
-  const searchKbdHint = document.getElementById('search-kbd-hint');
-
-  if (searchKbdHint && searchInput) {
-    searchKbdHint.onclick = () => searchInput.focus();
-  }
-
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-      e.preventDefault();
-      if (searchInput) {
-        searchInput.focus();
-        searchInput.select();
-      }
-    }
-  });
-
   // User menu toggle
   const userBtn = document.getElementById('btn-user-menu');
   const userDropdown = document.getElementById('user-dropdown');
@@ -275,7 +331,6 @@ function setupShellEvents() {
     userBtn.onclick = (e) => {
       e.stopPropagation();
       userDropdown.classList.toggle('open');
-      // close notification if open
       document.getElementById('notification-popover')?.classList.remove('open');
     };
   }
@@ -323,17 +378,10 @@ function setupShellEvents() {
     if (notifPopover && !notifPopover.contains(e.target) && !notifBtn?.contains(e.target)) {
       notifPopover.classList.remove('open');
     }
-    const searchDropdown = document.getElementById('search-results-dropdown');
-    if (searchDropdown && !searchDropdown.contains(e.target) && e.target.id !== 'global-search-input') {
-      searchDropdown.classList.remove('open');
-    }
   });
 
   // Setup New Project Modal
   setupNewProjectModal();
-
-  // Setup Global Search
-  setupGlobalSearch();
 }
 
 /**
@@ -436,7 +484,6 @@ function setupNewProjectModal() {
       showToast('Project created successfully', 'success');
       closeModal(modal);
       form.reset();
-      // Redirect to the new board
       window.location.href = `/projects/${res.project.id}`;
     } catch (err) {
       showToast(err.message, 'error');
@@ -448,90 +495,217 @@ function setupNewProjectModal() {
 }
 
 /**
- * Setup Global Search across accessible projects and tasks.
+ * Linear-style Command Palette (Ctrl+K)
  */
-function setupGlobalSearch() {
-  const input = document.getElementById('global-search-input');
-  const dropdown = document.getElementById('search-results-dropdown');
-  if (!input || !dropdown) return;
+function setupCommandPalette() {
+  const backdrop = document.getElementById('command-palette-backdrop');
+  const input = document.getElementById('palette-input');
+  const resultsContainer = document.getElementById('palette-results');
+  const escChip = document.getElementById('palette-esc-chip');
+  const searchTrigger = document.getElementById('global-search-container');
 
-  const onSearch = debounce(async () => {
-    const query = input.value.trim().toLowerCase();
-    if (!query) {
-      dropdown.classList.remove('open');
-      dropdown.innerHTML = '';
-      return;
+  if (!backdrop || !input || !resultsContainer) return;
+
+  const openPalette = () => {
+    backdrop.classList.add('open');
+    input.value = '';
+    renderPaletteItems('');
+    setTimeout(() => input.focus(), 50);
+  };
+
+  const closePalette = () => {
+    backdrop.classList.remove('open');
+    input.value = '';
+  };
+
+  // Triggers
+  if (searchTrigger) {
+    searchTrigger.onclick = openPalette;
+  }
+  if (escChip) {
+    escChip.onclick = closePalette;
+  }
+
+  // Keyboard shortcut Ctrl+K / Cmd+K
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      if (backdrop.classList.contains('open')) {
+        closePalette();
+      } else {
+        openPalette();
+      }
+    } else if (e.key === 'Escape' && backdrop.classList.contains('open')) {
+      closePalette();
+    }
+  });
+
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) closePalette();
+  });
+
+  // Debounced search inside palette
+  const handleInput = debounce(async () => {
+    renderPaletteItems(input.value.trim().toLowerCase());
+  }, 150);
+
+  input.addEventListener('input', handleInput);
+
+  // Keyboard navigation within results
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      paletteActiveIndex = (paletteActiveIndex + 1) % Math.max(paletteItems.length, 1);
+      updatePaletteSelection();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      paletteActiveIndex = (paletteActiveIndex - 1 + paletteItems.length) % Math.max(paletteItems.length, 1);
+      updatePaletteSelection();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const selected = paletteItems[paletteActiveIndex];
+      if (selected) {
+        executePaletteItem(selected);
+      }
+    }
+  });
+
+  async function renderPaletteItems(query) {
+    paletteItems = [];
+    paletteActiveIndex = 0;
+
+    let navMatches = [
+      { id: 'nav-dash', type: 'nav', title: 'Dashboard', iconName: 'layout-grid', action: () => (window.location.href = '/dashboard'), shortcut: 'G D' },
+      { id: 'nav-tasks', type: 'nav', title: 'My Tasks', iconName: 'list-checks', action: () => (window.location.href = '/my-tasks'), shortcut: 'G M' },
+    ];
+
+    let actionMatches = [
+      {
+        id: 'act-proj',
+        type: 'action',
+        title: 'Create new project',
+        iconName: 'plus',
+        action: () => {
+          closePalette();
+          const modal = document.getElementById('modal-new-project');
+          if (modal) openModal(modal);
+        },
+        shortcut: 'C P',
+      },
+      {
+        id: 'act-theme',
+        type: 'action',
+        title: 'Toggle light / dark theme',
+        iconName: getTheme() === 'dark' ? 'sun' : 'moon',
+        action: () => {
+          toggleTheme();
+          closePalette();
+        },
+        shortcut: 'T',
+      },
+    ];
+
+    let projectMatches = currentProjects.map((p) => ({
+      id: `proj-${p.id}`,
+      type: 'project',
+      title: p.name,
+      color: p.color,
+      meta: `${p.stats ? p.stats.total : 0} tasks`,
+      action: () => (window.location.href = `/projects/${p.id}`),
+    }));
+
+    if (query) {
+      navMatches = navMatches.filter((n) => n.title.toLowerCase().includes(query));
+      actionMatches = actionMatches.filter((a) => a.title.toLowerCase().includes(query));
+      projectMatches = projectMatches.filter((p) => p.title.toLowerCase().includes(query));
     }
 
-    try {
-      const [projRes, tasksRes] = await Promise.all([
-        api.get('/projects'),
-        api.get('/tasks/mine'),
-      ]);
+    let taskMatches = [];
+    if (query && query.length >= 2) {
+      try {
+        const tasksRes = await api.get('/tasks/mine');
+        taskMatches = (tasksRes.tasks || [])
+          .filter((t) => t.title.toLowerCase().includes(query) || (t.description && t.description.toLowerCase().includes(query)))
+          .map((t) => ({
+            id: `task-${t.id}`,
+            type: 'task',
+            title: t.title,
+            meta: `${t.project ? t.project.name : ''} • ${t.status}`,
+            action: () => (window.location.href = `/projects/${t.project.id}#task=${t.id}`),
+          }));
+      } catch (err) {
+        // silent
+      }
+    }
 
-      const matchedProjects = (projRes.projects || []).filter(
-        (p) => p.name.toLowerCase().includes(query) || (p.description && p.description.toLowerCase().includes(query))
-      );
+    let html = '';
+    let globalIndex = 0;
 
-      const matchedTasks = (tasksRes.tasks || []).filter(
-        (t) => t.title.toLowerCase().includes(query) || (t.description && t.description.toLowerCase().includes(query))
-      );
+    const buildGroup = (groupTitle, items) => {
+      if (items.length === 0) return '';
+      let groupHtml = `<div class="palette-group-title">${groupTitle}</div>`;
+      items.forEach((item) => {
+        const itemIdx = globalIndex++;
+        paletteItems.push(item);
 
-      if (matchedProjects.length === 0 && matchedTasks.length === 0) {
-        dropdown.innerHTML = `
-          <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: var(--font-size-sm);">
-            No matching results found
+        let iconMarkup = item.iconName ? icon(item.iconName, 'icon-sm') : '';
+        if (item.color) {
+          iconMarkup = `<span class="project-dot" style="background-color: ${item.color};"></span>`;
+        }
+
+        groupHtml += `
+          <div class="palette-item ${itemIdx === 0 ? 'active' : ''}" data-idx="${itemIdx}">
+            ${iconMarkup}
+            <span>${escapeHtml(item.title)}</span>
+            ${item.shortcut ? `<kbd class="palette-item-meta">${item.shortcut}</kbd>` : ''}
+            ${item.meta ? `<span class="palette-item-meta">${escapeHtml(item.meta)}</span>` : ''}
           </div>
         `;
-        dropdown.classList.add('open');
-        return;
-      }
+      });
+      return groupHtml;
+    };
 
-      let html = '';
+    html += buildGroup('Navigation', navMatches);
+    html += buildGroup('Actions', actionMatches);
+    html += buildGroup('Projects', projectMatches);
+    html += buildGroup('Tasks', taskMatches);
 
-      if (matchedProjects.length > 0) {
-        html += `<div class="search-result-group"><div class="search-group-title">Projects</div>`;
-        matchedProjects.forEach((p) => {
-          html += `
-            <a href="/projects/${p.id}" class="search-result-item">
-              <span class="project-dot" style="background-color: ${p.color};"></span>
-              <div class="search-result-meta">
-                <span class="search-result-title">${escapeHtml(p.name)}</span>
-                <span class="search-result-sub">${p.stats ? p.stats.total : 0} tasks</span>
-              </div>
-            </a>
-          `;
-        });
-        html += `</div>`;
-      }
-
-      if (matchedTasks.length > 0) {
-        html += `<div class="search-result-group"><div class="search-group-title">My Tasks</div>`;
-        matchedTasks.forEach((t) => {
-          html += `
-            <a href="/projects/${t.project.id}#task=${t.id}" class="search-result-item">
-              ${icon('list-checks', 'icon-sm')}
-              <div class="search-result-meta">
-                <span class="search-result-title">${escapeHtml(t.title)}</span>
-                <span class="search-result-sub">${escapeHtml(t.project.name)} &bull; ${t.status}</span>
-              </div>
-            </a>
-          `;
-        });
-        html += `</div>`;
-      }
-
-      dropdown.innerHTML = html;
-      dropdown.classList.add('open');
-    } catch (err) {
-      console.error('[search] Error searching:', err);
+    if (paletteItems.length === 0) {
+      html = `
+        <div style="padding: 32px 16px; text-align: center; color: var(--text-muted); font-size: var(--font-size-sm);">
+          No commands or results found for "<strong>${escapeHtml(query)}</strong>"
+        </div>
+      `;
     }
-  }, 250);
 
-  input.addEventListener('input', onSearch);
-  input.addEventListener('focus', () => {
-    if (input.value.trim()) dropdown.classList.add('open');
-  });
+    resultsContainer.innerHTML = html;
+
+    // Attach click events
+    resultsContainer.querySelectorAll('.palette-item').forEach((el) => {
+      el.onclick = () => {
+        const idx = parseInt(el.getAttribute('data-idx'), 10);
+        const item = paletteItems[idx];
+        if (item) executePaletteItem(item);
+      };
+    });
+  }
+
+  function updatePaletteSelection() {
+    resultsContainer.querySelectorAll('.palette-item').forEach((el) => {
+      const idx = parseInt(el.getAttribute('data-idx'), 10);
+      el.classList.toggle('active', idx === paletteActiveIndex);
+      if (idx === paletteActiveIndex) {
+        el.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  }
+
+  function executePaletteItem(item) {
+    closePalette();
+    if (typeof item.action === 'function') {
+      item.action();
+    }
+  }
 }
 
 /**
@@ -582,7 +756,7 @@ async function fetchNotifications() {
           const targetUrl = n.task && n.project ? `/projects/${n.project.id}#task=${n.task.id}` : n.project ? `/projects/${n.project.id}` : '#';
 
           return `
-            <a href="${targetUrl}" class="notification-item ${!n.read ? 'unread' : ''}">
+            <a href="${targetUrl}" class="notification-item ${!n.read ? 'unread' : ''}" data-notif-id="${n.id}">
               ${renderAvatar(n.actor, 28)}
               <div class="notification-content">
                 <div class="notification-text">${text}</div>
@@ -592,6 +766,20 @@ async function fetchNotifications() {
           `;
         })
         .join('');
+
+      list.querySelectorAll('.notification-item.unread').forEach((item) => {
+        item.addEventListener('click', async () => {
+          const notifId = item.getAttribute('data-notif-id');
+          if (notifId) {
+            try {
+              await api.patch(`/notifications/${notifId}/read`);
+              item.classList.remove('unread');
+            } catch (e) {
+              console.warn('[notifications] Single read error:', e);
+            }
+          }
+        });
+      });
     }
   } catch (err) {
     console.error('[notifications] Failed to fetch:', err);
@@ -599,7 +787,7 @@ async function fetchNotifications() {
 }
 
 /**
- * Polling every 20 seconds while visible.
+ * Polling fallback every 20 seconds while visible.
  */
 function startNotificationPolling() {
   fetchNotifications();
@@ -618,4 +806,3 @@ function startNotificationPolling() {
     }
   });
 }
-

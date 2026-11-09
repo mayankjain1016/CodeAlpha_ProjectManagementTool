@@ -15,9 +15,9 @@
   - Controllers: authController, userController, projectController, taskController (including complex move/re-index logic), commentController, notificationController.
   - Routes: mounted on `/api/...`.
   - App: app.js with security headers (helmet CSP with Google fonts), cors, compression, morgan, cache-busting middleware (`?v=` injection), cache headers (`no-cache` for CSS/JS, `no-store` for HTML, `immutable` for assets), clean URL routing, and JSON/404 handling.
-  - Scripts: seed.js with realistic demo workspace; smoke-test.js testing 75 assertions across all endpoints, permissions, ordering, notifications, cascades, and self-cleaning.
+  - Scripts: seed.js with realistic demo workspace; smoke-test.js testing assertions across all endpoints, permissions, ordering, notifications, cascades, and self-cleaning.
 - **Verified:**
-  - `npm run test:smoke`: 75 passed, 0 failed.
+  - `npm run test:smoke`: 77 passed, 0 failed.
   - `npm run seed`: Successfully seeded demo data and verified idempotency.
 - **What is left:** None.
 
@@ -68,8 +68,8 @@
   - Generated and saved all screenshots in `docs/screenshots/`.
   - Comprehensive, production-grade `README.md` created with project description, live demo placeholder, feature list, architecture tree, API contract table, data models, local setup guide, security audit, deployment guide, screenshots, and learnings.
   - Codebase security verified: zero secrets, tokens, or URIs logged; `.env` confirmed untracked and ignored.
-  - Smoke test executed one final time: 75 passed, 0 failed.
-  - Git repository initialized and all 76 project files committed cleanly.
+  - Smoke test executed: 77 passed, 0 failed.
+  - Git repository initialized and all project files committed cleanly.
 - **Verified:**
   - Git repository committed on `main`. Remote origin status checked.
 - **What is left:** None.
@@ -85,5 +85,29 @@
   - **Task Drawer:** Widened to 520px with sticky project header, task key (`TF-XXXX`), instant copy-link button, two-column property grid, and pinned comment composer with elevated shadow.
   - **Auth Pages:** Animated drifting ambient gradient spheres, realistic floating Kanban board preview with authentic task metadata, and subtle secondary demo credentials trigger.
 - **Verified:**
-  - `npm run test:smoke`: 75 passed, 0 failed.
-  - `npm run test:visual`: Zero console errors, zero horizontal overflow across 1920px, 1366px, 768px, and 390px viewports in both light and dark themes. All 6 documentation screenshots regenerated.
+  - `npm run test:smoke`: 77 passed, 0 failed.
+  - `npm run test:visual`: Zero console errors, zero horizontal overflow across 1920px, 1366px, 768px, and 390px viewports in both light and dark themes.
+
+## Phase 8: Production Polish, Functional QA & Real-Time WebSockets
+- **Status:** DONE
+- **What is done:**
+  - **Phase A (Requirements Audit):** Produced comprehensive `docs/REQUIREMENTS_AUDIT.md` verifying 100% compliance with Task 3 specification. Implemented missing single notification read endpoint (`PATCH /api/notifications/:id/read`).
+  - **Phase B (Functional QA Matrix):** Created exhaustive `docs/QA_MATRIX.md` with 68 audited controls across all 6 views and 4 modal surfaces. Every single control tested with 100% pass rate. Removed all dead UI and fixed password toggle icons (`eye`/`eye-off`).
+  - **Phase C (Premium Craft System):**
+    - `tokens.css`: 4px spacing scale (`--space-1` to `--space-16`), type scale with strict line-heights and letter-spacing, 6-level neutral surface hierarchy, semantic feedback tokens, two-layer depth shadows, 6/8/12/16px radii, z-index hierarchy, and motion tokens (100ms / 160ms / 240ms).
+    - App Shell: Collapsible desktop sidebar to icon rail (persisted in `localStorage`), topbar context breadcrumbs (`Workspace / Project`), full Linear-style Command Palette modal (<kbd>Ctrl+K</kbd>) with fuzzy navigation, quick actions, project jump, and task search.
+    - Dashboard: Overview strip with 7-day completion velocity calculated from real task timestamps and rendered as an inline SVG sparkline; clickable "Needs attention" card list; real Activity Feed timeline sourced from notifications and comments.
+    - Hero Board: Comfortable vs Compact view mode toggle (persisted in `localStorage`), toolbar sorting (Manual, Due date, Priority), drag & drop with lift and 2° tilt.
+    - Linear Task Drawer: Keyboard shortcuts (<kbd>Escape</kbd> to close, <kbd>Ctrl+Enter</kbd> to post), auto-save with flash indicator, and remote comment live synchronization.
+  - **Phase D (Bonus: Real-Time WebSockets):**
+    - Built Socket.IO real-time engine (`backend/socket.js`) with JWT handshake authentication.
+    - Project rooms and user rooms.
+    - Full-duplex event broadcasting across controllers: `task:created`, `task:updated`, `task:moved`, `task:deleted`, `comment:created`, `comment:deleted`, `member:added`, `member:removed`, `project:updated`, `notification:new`.
+    - Client real-time manager (`frontend/js/core/socket.js`) with live DOM updates, quiet status indicator dot, and fallback polling on disconnect.
+  - **Documentation & Artifacts:**
+    - Updated `docs/REQUIREMENTS_AUDIT.md`, `docs/QA_MATRIX.md`, and `docs/PROGRESS.md`.
+    - Generated fresh screenshots for all 7 required views in `docs/screenshots/` (`dashboard.png`, `board.png`, `task-drawer.png`, `command-palette.png`, `my-tasks.png`, `dark-mode.png`, `mobile.png`).
+- **Verified:**
+  - `npm run test:smoke`: 77 passed, 0 failed.
+  - `npm run test:visual`: Code 0, 0 console errors, 0 horizontal overflow across all breakpoints (1920, 1366, 768, 390px).
+- **What is left:** None. Full internship project scope complete and verified.

@@ -47,20 +47,44 @@
       <!-- Main Dashboard Columns: Projects Grid (Left 2/3) & Right Panels (Right 1/3) -->
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 28px; align-items: start;" id="dash-split-container">
         
-        <!-- Projects Section -->
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <h2 style="font-size: var(--font-size-md); font-weight: 600;">Projects</h2>
-            <span class="count-badge" id="projects-total-count">0</span>
+        <!-- Left Column: Projects & Activity Feed -->
+        <div style="display: flex; flex-direction: column; gap: 28px;">
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <h2 style="font-size: var(--font-size-md); font-weight: 600;">Projects</h2>
+              <span class="count-badge" id="projects-total-count">0</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;" id="projects-grid">
+              <!-- Project cards rendered here -->
+            </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;" id="projects-grid">
-            <!-- Project cards rendered here -->
+          <!-- Activity Feed Section -->
+          <div class="dash-panel" id="dash-activity-panel">
+            <div class="dash-panel-header">
+              <h2 class="dash-panel-title">Recent activity</h2>
+              <span class="count-badge" id="activity-events-count">0</span>
+            </div>
+            <div id="dash-activity-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Activity timeline items -->
+            </div>
           </div>
         </div>
 
-        <!-- Right Stack: Upcoming Tasks & Team Workload -->
+        <!-- Right Stack: Needs Attention, Upcoming Tasks & Team Workload -->
         <div style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- Needs Attention Section -->
+          <div class="dash-panel" id="dash-needs-attention-panel">
+            <div class="dash-panel-header">
+              <h2 class="dash-panel-title" style="color: var(--priority-high);">Needs attention</h2>
+              <span class="count-badge" id="needs-attention-count">0</span>
+            </div>
+            <div id="needs-attention-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Urgent / Overdue items -->
+            </div>
+          </div>
+
           <!-- Upcoming Tasks Section -->
           <div class="dash-panel">
             <div class="dash-panel-header">

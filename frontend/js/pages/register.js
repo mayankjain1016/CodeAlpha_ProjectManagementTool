@@ -26,12 +26,13 @@ function initRegister() {
   const bar2 = document.getElementById('bar-2') || document.getElementById('str-2');
   const bar3 = document.getElementById('bar-3') || document.getElementById('str-3');
 
-  togglePassBtn.innerHTML = icon('user', 'icon-sm');
+  togglePassBtn.innerHTML = icon('eye', 'icon-sm');
 
   let showPassword = false;
   togglePassBtn.onclick = () => {
     showPassword = !showPassword;
     passwordInput.type = showPassword ? 'text' : 'password';
+    togglePassBtn.innerHTML = icon(showPassword ? 'eye-off' : 'eye', 'icon-sm');
   };
 
   // Password strength meter

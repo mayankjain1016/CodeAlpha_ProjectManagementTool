@@ -9,6 +9,7 @@ const Notification = require('../models/Notification');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { isValidObjectId, validateCommentText } = require('../utils/validators');
+const { emitToProject, emitToUser } = require('../socket');
 
 // POST /api/tasks/:id/comments
 const addComment = asyncHandler(async (req, res) => {
@@ -65,20 +66,35 @@ const addComment = asyncHandler(async (req, res) => {
     .populate('author', 'name email avatarHue')
     .lean();
 
-  res.status(201).json({
-    comment: {
-      id: populated._id.toString(),
-      task: populated.task.toString(),
-      author: {
-        id: populated.author._id.toString(),
-        name: populated.author.name,
-        email: populated.author.email,
-        avatarHue: populated.author.avatarHue,
-      },
-      text: populated.text,
-      createdAt: populated.createdAt,
+  const formattedComment = {
+    id: populated._id.toString(),
+    task: populated.task.toString(),
+    author: {
+      id: populated.author._id.toString(),
+      name: populated.author.name,
+      email: populated.author.email,
+      avatarHue: populated.author.avatarHue,
     },
+    text: populated.text,
+    createdAt: populated.createdAt,
+  };
+
+  emitToProject(task.project.toString(), 'comment:created', {
+    taskId: task._id.toString(),
+    comment: formattedComment,
   });
+
+  if (task.assignee && task.assignee.toString() !== req.user._id.toString()) {
+    emitToUser(task.assignee.toString(), 'notification:new', {
+      type: 'commented',
+      project: { id: project._id.toString(), name: project.name },
+      task: { id: task._id.toString(), title: task.title },
+      actor: { id: req.user._id.toString(), name: req.user.name, avatarHue: req.user.avatarHue },
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  res.status(201).json({ comment: formattedComment });
 });
 
 // DELETE /api/comments/:id (author or project owner)
@@ -102,6 +118,11 @@ const deleteComment = asyncHandler(async (req, res) => {
 
   await Comment.findByIdAndDelete(comment._id);
   await Task.findByIdAndUpdate(task._id, { $inc: { commentsCount: -1 } });
+
+  emitToProject(task.project.toString(), 'comment:deleted', {
+    taskId: task._id.toString(),
+    commentId: comment._id.toString(),
+  });
 
   res.json({ message: 'Comment deleted' });
 });

@@ -42,5 +42,22 @@ const markAllRead = asyncHandler(async (req, res) => {
   res.json({ message: 'All notifications marked as read' });
 });
 
-module.exports = { getNotifications, markAllRead };
+// PATCH /api/notifications/:id/read
+const markSingleRead = asyncHandler(async (req, res) => {
+  const notification = await Notification.findOneAndUpdate(
+    { _id: req.params.id, recipient: req.user._id },
+    { $set: { read: true } },
+    { new: true }
+  );
+  if (!notification) {
+    res.status(404).json({ message: 'Notification not found' });
+    return;
+  }
+  res.json({
+    message: 'Notification marked as read',
+    notification: { id: notification._id.toString(), read: true },
+  });
+});
+
+module.exports = { getNotifications, markAllRead, markSingleRead };
 
