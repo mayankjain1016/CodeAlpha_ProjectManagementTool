@@ -3,6 +3,9 @@
  * Loads environment, connects to the database, initializes Socket.IO, then starts listening.
  */
 
+const path = require('path');
+// Load .env from backend directory if present, or fallback to current working directory
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 require('dotenv').config();
 
 const http = require('http');
@@ -23,7 +26,7 @@ async function start() {
 
   const PORT = parseInt(process.env.PORT, 10) || 5000;
 
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`[server] TaskFlow running with WebSockets on port ${PORT} (${process.env.NODE_ENV})`);
   });
 

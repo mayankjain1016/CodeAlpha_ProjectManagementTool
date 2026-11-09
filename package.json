@@ -1,13 +1,27 @@
 {
-  "name": "taskflow-root",
+  "name": "taskflow",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "npm --prefix backend start",
+    "build": "npm --prefix backend install --omit=dev",
+    "postinstall": "npm --prefix backend install --omit=dev",
+    "start": "node backend/server.js",
     "dev": "npm --prefix backend run dev",
-    "seed": "npm --prefix backend run seed",
+    "seed": "node backend/scripts/seed.js",
     "test:smoke": "npm --prefix backend run test:smoke",
     "test:visual": "npm --prefix backend run test:visual"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.4",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.6.3",
+    "morgan": "^1.10.0",
+    "socket.io": "^4.8.4"
   }
 }
-
